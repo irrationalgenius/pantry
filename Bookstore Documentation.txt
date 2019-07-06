@@ -13,7 +13,7 @@ API endpoint = Specific URL to make the request, or known as a path
 Handler function = Specific code function to handle when requested
 HTTP actions = Specific HTTP action type
 
-Standard HTTP Actions:
+Standard 7 HTTP Actions:
 	GET -> Retrieves all resources in a collection, or a single resource
 	HEAD -> Retrieves all resources in a collection, or a single resource (header only)
 	POST -> Create a new resource in a collection
