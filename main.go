@@ -32,15 +32,15 @@ func main() {
 
 	router.HandleFunc("/books", getBooks).Methods("GET")
 	router.HandleFunc("/book/{id}", getBook).Methods("GET")
-	router.HandleFunc("/books", addBook).Methods("POST")
-	router.HandleFunc("/books", updateBook).Methods("PUT")
+	router.HandleFunc("/book", addBook).Methods("POST")
+	router.HandleFunc("/book", updateBook).Methods("PUT")
 	router.HandleFunc("/book/{id}", removeBook).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
-	// log.Println("Geting all books method is invoked")
+	log.Println("Geting all books method is invoked")
 
 	json.NewEncoder(w).Encode(books)
 
@@ -71,6 +71,25 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 
 func addBook(w http.ResponseWriter, r *http.Request) {
 	log.Println("Adding a book method is invoked")
+
+	// Create a new variable book as of type Book
+	var book Book
+
+	// Handle the Body of the response, and decode into a pointer of the
+	// book variable just created.
+	json.NewDecoder(r.Body).Decode(&book)
+
+	// Take the books array and add the newly retrieved book to the existing
+	// books collection
+	books = append(books, book)
+
+	// Take all the data and encode into the json format, and sen as a
+	// server request to the client
+	json.NewEncoder(w).Encode(books)
+
+	// Print to the terminal
+	log.Println(books)
+
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
