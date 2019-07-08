@@ -47,18 +47,23 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
-	// log.Println("Geting a single book method is invoked")
+	log.Println("Retrieving a single book method is invoked")
 
-	// Retrieves the parameters received from the request
+	// Retrieves the parameters received from the client request
 	params := mux.Vars(r)
 
 	// Prints the retrieved parameter to the console
 	log.Println(params)
 
 	// Converts the string to an integer by the params map id value and
-	// places the value in a new variable of "i"
+	// places the value in a new variable of "i", discards the err var
 	i, _ := strconv.Atoi(params["id"])
 
+	// Golang doc for the Range Type
+	// URL: https://tour.golang.org/moretypes/16
+	//   When ranging over a slice, two values are returned for each iteration.
+	//   The first is the index, and the second is a copy
+	//   of the element at that index.
 	// Loops through all the books, until the value of "i" is matched
 	for _, book := range books {
 		if book.ID == i {
@@ -94,8 +99,46 @@ func addBook(w http.ResponseWriter, r *http.Request) {
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating a book method is invoked")
+
+	var book Book
+
+	json.NewDecoder(r.Body).Decode(&book)
+
+	for i, item := range books {
+		if item.ID == book.ID {
+			books[i] = book
+		}
+	}
+
+	json.NewEncoder(w).Encode(books)
+
 }
 
 func removeBook(w http.ResponseWriter, r *http.Request) {
 	log.Println("Removing a book method is invoked")
+
+	// Retrieves the parameters received from the client request
+	params := mux.Vars(r)
+
+	// Converts the string to an integer by the params map id value and
+	// places the value in a new variable of "id", discards the err var
+	id, _ := strconv.Atoi(params["id"])
+
+	// Golang doc for the Range Type
+	// URL: https://tour.golang.org/moretypes/16
+	//   When ranging over a slice, two values are returned for each iteration.
+	//   The first is the index, and the second is a copy
+	//   of the element at that index.
+	// Loops through all the books, until the value of "i" is matched
+	for i, item := range books {
+		if item.ID == id {
+
+			// Create a new slice without the matching id
+			books = append(books[:i], books[i+1:]...)
+		}
+	}
+
+	// Send the response as a Json encoded object by the book variable
+	json.NewEncoder(w).Encode(books)
+
 }
