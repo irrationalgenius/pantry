@@ -199,4 +199,24 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 func removeBook(w http.ResponseWriter, r *http.Request) {
 	log.Println("Removing a book method is invoked")
 
+	// Retreieve the URL parameters as "r" and insert into a
+	// map data type as "params"
+	params := mux.Vars(r)
+
+	// Remove from the database a record matching this parameter value
+	row, err := db.Exec("delete from books where id = $1", params["id"])
+
+	// See logFatal() function
+	logFatal(err)
+
+	// Get the number of rows affected for the delete clause
+	rowDeleted, err := row.RowsAffected()
+
+	// See logFatal() function
+	logFatal(err)
+
+	// Convert the rowDeleted var to a json object and send the response
+	// to the client as "w"
+	json.NewEncoder(w).Encode(rowDeleted)
+
 }
