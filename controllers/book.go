@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"udemy-bookstore/models"
 	"udemy-bookstore/repository/book"
 	"udemy-bookstore/utils"
@@ -56,24 +57,35 @@ func (c Controller) GetBook(db *sql.DB) http.HandlerFunc {
 
 		// Initialize a variable with the type of the Book struct
 		var book models.Book
+		// Initialize a variable with the type of the Error struct
+		var error models.Error
 
 		// Retreieve the URL parameters as "r" and insert into a
 		// map data type as "params"
 		params := mux.Vars(r)
 
-		// Search the database for this parameter value
-		row := db.QueryRow("select * from books where id=$1", params["id"])
+		books = []models.Book{}
+		bookRepo := bookRepository.BookRepository{}
 
-		// Insert the values from the database into the hex value
-		// of the book vars
-		err := row.Scan(&book.ID, &book.Title, &book.Author, &book.Year)
+		id, _ := strconv.Atoi(params["id"])
 
-		// See logFatal() function
-		utils.LogFatal(err)
+		book, err := bookRepo.GetBook(db, book, id)
 
-		// Convert the book data type to a json object and send the response
-		// to the client as "w"
-		json.NewEncoder(w).Encode(book)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				error.Message = "Record not found"
+				utils.SendError(w, http.StatusNotFound, error)
+				return
+			} else {
+				error.Message = "Server error"
+				utils.SendError(w, http.StatusInternalServerError, error)
+				return
+			}
+		}
+
+		// When successful send the results and status code to the client
+		w.Header().Set("Content-Type", "application/json")
+		utils.SendSuccess(w, book)
 	}
 }
 
@@ -84,25 +96,34 @@ func (c Controller) AddBook(db *sql.DB) http.HandlerFunc {
 
 		// Initialize a variable with the type of the Book struct
 		var book models.Book
-
 		// Initialize a variable with the type of int
 		var bookID int
+		// Initialize a variable with the type of the Error struct
+		var error models.Error
 
 		// Handle the response Body and map values to the hex value
 		// of the book var
 		json.NewDecoder(r.Body).Decode(&book)
 
-		// Insert values received from the client into the database
-		// Return the id of the insert into the hex value location for bookID
-		err := db.QueryRow("insert into books(title, author, year) values($1, $2, $3) RETURNING id",
-			book.Title, book.Author, book.Year).Scan(&bookID)
+		// Validate book data, before saving details
+		if book.Author == "" || book.Title == "" || book.Year == "" {
+			error.Message = "Cannot save record with missing data."
+			utils.SendError(w, http.StatusBadRequest, error)
+			return
+		}
 
-		// See logFatal() function
-		utils.LogFatal(err)
+		bookRepo := bookRepository.BookRepository{}
+		bookID, err := bookRepo.AddBook(db, book)
 
-		// Convert the bookID var to a json object and send the response
-		// to the client as "w"
-		json.NewEncoder(w).Encode(bookID)
+		if err != nil {
+			error.Message = "Server error"
+			utils.SendError(w, http.StatusInternalServerError, error)
+			return
+		}
+
+		// When successful send the results and status code to the client
+		w.Header().Set("Content-Type", "application/json")
+		utils.SendSuccess(w, bookID)
 	}
 }
 
@@ -113,27 +134,31 @@ func (c Controller) UpdateBook(db *sql.DB) http.HandlerFunc {
 
 		// Initialize a variable with the type of the Book struct
 		var book models.Book
+		// Initialize a variable with the type of the Error struct
+		var error models.Error
 
 		// Retrieves the response body and maps it to the book variable
 		json.NewDecoder(r.Body).Decode(&book)
 
-		// Update values received from the client to the record in the database
-		// Return the id of the update into the hex value location for bookID
-		result, err := db.Exec("update books set title=$1, author=$2, year=$3 where id=$4 RETURNING id",
-			&book.Title, &book.Author, &book.Year, &book.ID)
+		// Validate book data, before saving details
+		if book.ID == 0 || book.Author == "" || book.Title == "" || book.Year == "" {
+			error.Message = "Cannot save record with missing data."
+			utils.SendError(w, http.StatusBadRequest, error)
+			return
+		}
 
-		// See logFatal() function
-		utils.LogFatal(err)
+		bookRepo := bookRepository.BookRepository{}
+		rowsUpdated, err := bookRepo.UpdateBook(db, book)
 
-		// Get the number of rows affected for the update clause
-		rowUpdated, err := result.RowsAffected()
+		if err != nil {
+			error.Message = "Server error"
+			utils.SendError(w, http.StatusInternalServerError, error)
+			return
+		}
 
-		// See logFatal() function
-		utils.LogFatal(err)
-
-		// Convert the rowUpdated var to a json object and send the response
-		// to the client as "w"
-		json.NewEncoder(w).Encode(rowUpdated)
+		// When successful send the results and status code to the client
+		w.Header().Set("Content-Type", "text/plain")
+		utils.SendSuccess(w, rowsUpdated)
 	}
 }
 
@@ -142,24 +167,32 @@ func (c Controller) RemoveBook(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Removing a book method is invoked")
 
+		// Initialize a variable with the type of the Error struct
+		var error models.Error
 		// Retreieve the URL parameters as "r" and insert into a
 		// map data type as "params"
 		params := mux.Vars(r)
 
-		// Remove from the database a record matching this parameter value
-		row, err := db.Exec("delete from books where id = $1", params["id"])
+		bookRepo := bookRepository.BookRepository{}
 
-		// See logFatal() function
-		utils.LogFatal(err)
+		id, _ := strconv.Atoi(params["id"])
 
-		// Get the number of rows affected for the delete clause
-		rowDeleted, err := row.RowsAffected()
+		rowsDeleted, err := bookRepo.RemoveBook(db, id)
 
-		// See logFatal() function
-		utils.LogFatal(err)
+		if err != nil {
+			error.Message = "Server error"
+			utils.SendError(w, http.StatusInternalServerError, error)
+			return
+		}
 
-		// Convert the rowDeleted var to a json object and send the response
-		// to the client as "w"
-		json.NewEncoder(w).Encode(rowDeleted)
+		if rowsDeleted == 0 {
+			error.Message = "Record not found"
+			utils.SendError(w, http.StatusNotFound, error)
+			return
+		}
+
+		// When successful send the results and status code to the client
+		w.Header().Set("Content-Type", "text/plain")
+		utils.SendSuccess(w, rowsDeleted)
 	}
 }

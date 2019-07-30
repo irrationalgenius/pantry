@@ -19,7 +19,7 @@ var db *sql.DB
 
 /*
 	Clarification of Pointers
-		* Retrieves the data from memory location (Dereference)
+		* Retrieves the value from the memory location (Dereference)
 		& Retreieves the hex value from the memory location
 */
 
