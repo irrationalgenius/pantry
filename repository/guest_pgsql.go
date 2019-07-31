@@ -22,7 +22,8 @@ func (g GuestRepository) GetGuests(db *sql.DB, guest models.Guest, guests []mode
 												 FROM pantry.guests`)
 
 	if err != nil {
-		return []models.Guest{}, err
+		// return []models.Guest{}, err
+		panic(err)
 	}
 
 	for rows.Next() {
@@ -32,11 +33,16 @@ func (g GuestRepository) GetGuests(db *sql.DB, guest models.Guest, guests []mode
 			&guest.IsEspanol, &guest.IsUnemployed, &guest.IsHomeless, &guest.IsFamily,
 			&guest.IsContactOk, &guest.Allergies, &guest.Notes, &guest.LastDateUpdated)
 
+		// if guest.Allergies.Valid == false {
+		// 	guest.Allergies.String = ""
+		// }
+
 		guests = append(guests, guest)
 	}
 
 	if err != nil {
-		return []models.Guest{}, err
+		// return []models.Guest{}, err
+		panic(err)
 	}
 
 	return guests, nil
@@ -52,19 +58,20 @@ func (g GuestRepository) AddGuest(db *sql.DB, guest models.Guest) error {
 																	count_children, count_adults, worship_place, is_member, is_baptized,
 																	is_espanol, is_unemployed, is_homeless, is_family,
 																	is_contact_ok, allergies, notes)
-                          VALUES($2, $3, $4, $5,
-																 $6, $7, $8, $9, $10, $11, $12,
-																 $13, $14, $15, $16, $17,
-																 $18, $19, $20, $21,
-																 $22, $23, $24)`,
-		guest.Status, guest.FirstName, guest.LastName, guest.Gender,
-		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
-		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
-		guest.IsEspanol, guest.IsUnemployed, guest.IsHomeless, guest.IsFamily,
-		guest.IsContactOk, guest.Allergies, guest.Notes)
+                          VALUES($1, $2, $3, $4,
+																 $5, $6, $7, $8, $9, $10, $11,
+																 $12, $13, $14, $15, $16,
+																 $17, $18, $19, $20,
+																 $21, $22, $23)`,
+		guest.Status.String, guest.FirstName.String, guest.LastName.String, guest.Gender.String,
+		guest.UnitNum.String, guest.StAddress.String, guest.State.String, guest.City.String, guest.Zip.String, guest.TelNum.String, guest.Email.String,
+		guest.ChildNum.Int64, guest.AdultNum.Int64, guest.PlaceOfWorship.String, guest.IsMember.String, guest.IsBaptized.String,
+		guest.IsEspanol.String, guest.IsUnemployed.String, guest.IsHomeless.String, guest.IsFamily.String,
+		guest.IsContactOk.String, guest.Allergies.String, guest.Notes.String)
 
 	if err != nil {
-		return err
+		// return []models.Guest{}, err
+		panic(err)
 	}
 
 	result.RowsAffected()

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"pantry2/models"
@@ -91,36 +92,36 @@ func (c Controller) AddGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Adding a guest method was invoked")
 		//
-		// 		// Initialize a variable with the type of the Book struct
-		// 		var book models.Book
-		// 		// Initialize a variable with the type of int
-		// 		var bookID int
-		// 		// Initialize a variable with the type of the Error struct
-		// 		var error models.Error
-		//
+		// Initialize a variable with the type of the Guest struct
+		var guest models.Guest
+		// Initialize a variable with the type of int
+		// var guestID int
+		// Initialize a variable with the type of the Error struct
+		var error models.Error
+
 		// 		// Handle the response Body and map values to the hex value
 		// 		// of the book var
-		// 		json.NewDecoder(r.Body).Decode(&book)
-		//
+		json.NewDecoder(r.Body).Decode(&guest)
+
 		// 		// Validate book data, before saving details
 		// 		if book.Author == "" || book.Title == "" || book.Year == "" {
 		// 			error.Message = "Cannot save record with missing data."
 		// 			utils.SendError(w, http.StatusBadRequest, error)
 		// 			return
 		// 		}
-		//
-		// 		bookRepo := bookRepository.BookRepository{}
-		// 		bookID, err := bookRepo.AddBook(db, book)
-		//
-		// 		if err != nil {
-		// 			error.Message = "Server error"
-		// 			utils.SendError(w, http.StatusInternalServerError, error)
-		// 			return
-		// 		}
-		//
-		// 		// When successful send the results and status code to the client
-		// 		w.Header().Set("Content-Type", "application/json")
-		// 		utils.SendSuccess(w, bookID)
+
+		guestRepo := repository.GuestRepository{}
+		err := guestRepo.AddGuest(db, guest)
+
+		if err != nil {
+			error.Message = "Server error"
+			utils.SendError(w, http.StatusInternalServerError, error)
+			return
+		}
+
+		// When successful send the results and status code to the client
+		w.Header().Set("Content-Type", "application/json")
+		utils.SendSuccess(w, "Success")
 	}
 }
 
