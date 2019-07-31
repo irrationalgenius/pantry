@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"pantry1/drivers"
+	"pantry2/controllers"
 	"udemy-bookstore/models"
 
 	"github.com/gorilla/mux"
@@ -30,22 +32,20 @@ func init() {
 func main() {
 	// Connect to the database, and verify the connection, if any issues
 	// program exits immediately
-	// db = drivers.PgConnect()
+	db = drivers.PgConnect()
 
 	// Create an instance of the Contoller object, and assign its value to booker
-	// guest := controllers.Controller{}
-
-	// controllers.GuestTest()
+	guest := controllers.Controller{}
 
 	// Create an instance of the New Router function in mux
 	router := mux.NewRouter()
 
 	// Map each URL route to a speific handler function
-	// router.HandleFunc("/guests", controllers.GuestTest()).Methods("GET")
-	// router.HandleFunc("/book/{id}", booker.GetBook(db)).Methods("GET")
-	// router.HandleFunc("/book", booker.AddBook(db)).Methods("POST")
-	// router.HandleFunc("/book", booker.UpdateBook(db)).Methods("PUT")
-	// router.HandleFunc("/book/{id}", booker.RemoveBook(db)).Methods("DELETE")
+	router.HandleFunc("/guests", guest.GetGuests(db)).Methods("GET")
+	router.HandleFunc("/guest/{id}", guest.GetGuest(db)).Methods("GET")
+	router.HandleFunc("/guest", guest.AddGuest(db)).Methods("POST")
+	router.HandleFunc("/guest", guest.UpdateGuest(db)).Methods("PUT")
+	router.HandleFunc("/guest/{id}", guest.RemoveGuest(db)).Methods("DELETE")
 
 	// Run the server, if any errors exits then logFatal()
 	fmt.Println("Server is running at port 8000")
