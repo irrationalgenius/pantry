@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"pantry2/models"
-	"pantry2/repository/guest"
+	"pantry2/repository"
 	"pantry2/utils"
 )
 
@@ -17,20 +17,20 @@ var guests []models.Guest
 // GetGuests : GetGuests
 func (c Controller) GetGuests(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Retrieving all guests method was invoked")
+		log.Println("Retrieving all Guests method was invoked")
 
-		// Initialize a variable with the type of the Book struct
+		// Initialize a variable with the type of the Guest struct
 		var guest models.Guest
 		// Initialize a variable with the type of the Error struct
 		var error models.Error
 		// Assign an empty slice to the global []books data type
 		guests = []models.Guest{}
-		// Initialize an instance of the BookRepository and assign to
-		// the bookRepo variable
-		guestRepo := guestRepository.GuestRepository{}
+		// Initialize an instance of the repository and assign to
+		// the guestRepo variable
+		guestRepo := repository.GuestRepository{}
 
-		// Invoke the GetBooks method by the bookRepo instance and assign
-		// the value to the variables books and err
+		// Invoke the GetGuests method by the guestRepo instance and assign
+		// the value to the variables guests and err
 		guests, err := guestRepo.GetGuests(db, guest, guests)
 
 		// If an error arises handle it using the SendError function
@@ -46,7 +46,7 @@ func (c Controller) GetGuests(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// // GetGuests : GetGuests
+// // GetGuest : GetGuest
 func (c Controller) GetGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Retrieving the guest method was invoked")
