@@ -2,21 +2,13 @@ package drivers
 
 import (
 	"database/sql"
-	"log"
 	"os"
+	"pantry/utils"
 
 	"github.com/lib/pq"
 )
 
 var db *sql.DB
-
-// If for any reason, something goes amiss then exit and
-// send the message to the logging console.
-func logFatal(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 //PgConnect : PgConnect
 func PgConnect() *sql.DB {
@@ -25,20 +17,20 @@ func PgConnect() *sql.DB {
 	pgHost, err := pq.ParseURL(os.Getenv("PG_URL"))
 
 	// See logFatal() function
-	logFatal(err)
+	utils.LogFatal(err)
 
 	// Connect to the database, and return a handler and
 	// err vars "db", "err"
 	db, err = sql.Open("postgres", pgHost)
 
 	// See logFatal() function
-	logFatal(err)
+	utils.LogFatal(err)
 
 	// Verifies an active db connection
 	err = db.Ping()
 
 	// See logFatal() function
-	logFatal(err)
+	utils.LogFatal(err)
 
 	return db
 }

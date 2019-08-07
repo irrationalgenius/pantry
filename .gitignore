@@ -1,2 +1,7 @@
-pantry2.exe
+pantry.exe
 resources/*.*
+resources/archive/
+resources/db/data-init/
+resources/db/postgres_psql.txt
+resources/db/sql_guest_info.sql
+.env

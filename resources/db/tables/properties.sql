@@ -7,6 +7,7 @@ CREATE TABLE pantry.properties (
 	prop_category varchar(255) NOT NULL, -- Divides the Properties into distinct Categories
 	prop_name varchar(255) NOT NULL, -- Property name
 	prop_value text NULL, -- Property value
+	prop_description text NULL, -- Property value
 	CONSTRAINT properties_pkey PRIMARY KEY (id)
 );
 

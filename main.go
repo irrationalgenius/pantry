@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pantry1/drivers"
-	"pantry2/controllers"
-	"udemy-bookstore/models"
+	"pantry/controllers"
+	"pantry/drivers"
+	"pantry/models"
 
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"
 )
 
-// Declare a slice data type of the Book struct
-var books []models.Book
 var db *sql.DB
+var appVars []models.ConfigParam
 
 /*
 	Clarification of Pointers
@@ -34,8 +33,14 @@ func main() {
 	// program exits immediately
 	db = drivers.PgConnect()
 
+	// Retrieves all application config params from the database
+	appVars = controllers.GetAppVars(db)
+
+	// Displays the splashscreen by the console
+	controllers.SplashScreen(appVars)
+
 	// Create an instance of the Contoller object, and assign its value to booker
-	guest := controllers.Controller{}
+	guest := controllers.GuestController{}
 
 	// Create an instance of the New Router function in mux
 	router := mux.NewRouter()

@@ -6,6 +6,9 @@ import (
 	"net/http"
 )
 
+//Tester : Tester
+type Tester struct{}
+
 // SendError : SendError
 func SendError(w http.ResponseWriter, status int, err interface{}) {
 	w.WriteHeader(status)
@@ -24,4 +27,14 @@ func LogFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+//TestFuncStruct : TestFuncStruct
+func (l Tester) TestFuncStruct() {
+	log.Println("This package works")
+}
+
+//TestFunc : TestFunc
+func TestFunc() {
+	log.Println("This package works")
 }

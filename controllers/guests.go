@@ -5,26 +5,24 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"pantry2/models"
-	"pantry2/repository"
-	"pantry2/utils"
+	"pantry/models"
+	"pantry/repository"
+	"pantry/utils"
 	"strconv"
 
 	"github.com/gorilla/mux"
 )
 
-// Controller : Controllers
-type Controller struct{}
+// GuestController : GuestController
+type GuestController struct{}
 
 var guests []models.Guest
 
 // GetGuests : GetGuests
-func (c Controller) GetGuests(db *sql.DB) http.HandlerFunc {
+func (g GuestController) GetGuests(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Retrieving all Guests method was invoked")
+		log.Println("Invoking the Get all Guests Controller")
 
-		// Initialize a variable with the type of the Error struct
-		var error models.Error
 		// Initialize an instance of the repository and assign to
 		// the guestRepo variable
 		guestRepo := repository.GuestRepository{}
@@ -35,8 +33,7 @@ func (c Controller) GetGuests(db *sql.DB) http.HandlerFunc {
 
 		// If an error arises handle it using the SendError function
 		if err != nil {
-			error.Message = "Server Error"
-			utils.SendError(w, http.StatusInternalServerError, error)
+			utils.SendError(w, http.StatusInternalServerError, err)
 			utils.LogFatal(err)
 		}
 		//
@@ -47,36 +44,36 @@ func (c Controller) GetGuests(db *sql.DB) http.HandlerFunc {
 }
 
 //GetGuest : GetGuest
-func (c Controller) GetGuest(db *sql.DB) http.HandlerFunc {
+func (g GuestController) GetGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Retrieving the guest method was invoked")
+		log.Println("Invoking the Get a speific Guest Controller")
 
 		// Initialize a variable with the type of the Error struct
-		// var error models.Error
+		var error models.Error
 
 		// Retreieve the URL parameters as "r" and insert into a
 		// map data type as "params"
 		params := mux.Vars(r)
 
+		// Create an instance of the Guest Repo to manage incoming data
 		guestRepo := repository.GuestRepository{}
 
 		// Convert the URL parameter value to an int,
 		// rather than a string
 		id, _ := strconv.Atoi(params["id"])
 
-		guest, _ := guestRepo.GetGuest(db, id)
+		guest, err := guestRepo.GetGuest(db, id)
 
-		// if err != nil {
-		// 	if err == sql.ErrNoRows {
-		// 		error.Message = "Record not found"
-		// 		utils.SendError(w, http.StatusNotFound, error)
-		// 		return
-		// 	} else {
-		// 		error.Message = "Server error"
-		// 		utils.SendError(w, http.StatusInternalServerError, error)
-		// 		return
-		// 	}
-		// }
+		if err != nil {
+			if err == sql.ErrNoRows {
+				error.Message = "Error: The Record was not found"
+				utils.SendError(w, http.StatusNotFound, error)
+				return
+			} else {
+				utils.SendError(w, http.StatusInternalServerError, err)
+				return
+			}
+		}
 
 		// When successful send the results and status code to the client
 		w.Header().Set("Content-Type", "application/json")
@@ -85,36 +82,40 @@ func (c Controller) GetGuest(db *sql.DB) http.HandlerFunc {
 }
 
 // AddGuest : AddGuest
-func (c Controller) AddGuest(db *sql.DB) http.HandlerFunc {
+func (g GuestController) AddGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Adding a guest method was invoked")
+		log.Println("Invoking the Guest Adding Controller")
 
 		// Initialize a variable with the type of the Guest struct
 		var guest models.Guest
-		// Initialize a variable with the type of int
-		// var guestID int
-		// Initialize a variable with the type of the Error struct
-		var error models.Error
+		// Initialize a variable with the type of the Visit struct
+		var visit models.Visit
 
 		// Handle the response Body and map values to the hex value
 		// of the book var
 		json.NewDecoder(r.Body).Decode(&guest)
 
-		// Validate book data, before saving details
-		guest, err := repository.GuestValidate(guest)
+		guestRepo := repository.GuestRepository{}
+		guestID, err := guestRepo.AddGuest(db, guest)
 
 		if err != nil {
-			error.Message = "Validation failed, see error output"
-			utils.SendError(w, http.StatusInternalServerError, error)
+			utils.SendError(w, http.StatusInternalServerError, err)
 			utils.LogFatal(err)
 		}
 
-		guestRepo := repository.GuestRepository{}
-		err = guestRepo.AddGuest(db, guest)
+		// Assigns the newly returned ID from the database to the Guest ID
+		// in the current object
+		guest.ID = guestID
+
+		// Dummy note used to save with the record to ensure correct saving
+		// of database vars, used for debugging
+		// visit.Notes = "This is a dummy note to save with the visit record."
+
+		visitRepo := repository.VisitRepository{}
+		err = visitRepo.AddVisit(db, guest, visit)
 
 		if err != nil {
-			error.Message = "Failed to add Guest, see error output"
-			utils.SendError(w, http.StatusInternalServerError, error)
+			utils.SendError(w, http.StatusInternalServerError, err)
 			utils.LogFatal(err)
 		}
 
@@ -125,7 +126,7 @@ func (c Controller) AddGuest(db *sql.DB) http.HandlerFunc {
 }
 
 // UpdateGuest : UpdateGuest
-func (c Controller) UpdateGuest(db *sql.DB) http.HandlerFunc {
+func (g GuestController) UpdateGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Updating a guest method was invoked")
 		//
@@ -160,7 +161,7 @@ func (c Controller) UpdateGuest(db *sql.DB) http.HandlerFunc {
 }
 
 // RemoveGuest : RemoveGuest
-func (c Controller) RemoveGuest(db *sql.DB) http.HandlerFunc {
+func (g GuestController) RemoveGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Removing a guest method was invoked")
 		//
