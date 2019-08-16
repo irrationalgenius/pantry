@@ -3,65 +3,18 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"pantry/models"
-	"strconv"
 	"time"
 )
 
 //GuestRepository : GuestRepository
 type GuestRepository struct{}
 
-//GetGuests : GetGuests
-func (g GuestRepository) GetGuests(db *sql.DB) ([]models.Guest, error) {
-	log.Println("Invoking the Get Guests Repository")
-
-	var guestRaw models.GuestRaw
-	var guestsRaw []models.GuestRaw
-
-	sqlGuestsRawGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
-			unit_num, st_address, state, city, zip, tel_num, email,
-			count_children, count_adults, worship_place, is_member, is_baptized,
-			is_espanol, is_unemployed, is_homeless, is_family,
-			is_contact_ok, allergies, notes, last_date_updated
-		FROM pantry.guests`
-
-	rows, err := db.Query(sqlGuestsRawGet)
-
-	if err != nil {
-		errorMsg := `Error: Issue occured while retrieving Guests
-      from the database.`
-		return []models.Guest{}, errors.New(errorMsg)
-	}
-
-	for rows.Next() {
-		err = rows.Scan(&guestRaw.ID, &guestRaw.DateEnrolled, &guestRaw.Status, &guestRaw.FirstName, &guestRaw.LastName, &guestRaw.Gender,
-			&guestRaw.UnitNum, &guestRaw.StAddress, &guestRaw.State, &guestRaw.City, &guestRaw.Zip, &guestRaw.TelNum, &guestRaw.Email,
-			&guestRaw.ChildNum, &guestRaw.AdultNum, &guestRaw.PlaceOfWorship, &guestRaw.IsMember, &guestRaw.IsBaptized,
-			&guestRaw.IsEspanol, &guestRaw.IsUnemployed, &guestRaw.IsHomeless, &guestRaw.IsFamily,
-			&guestRaw.IsContactOk, &guestRaw.Allergies, &guestRaw.Notes, &guestRaw.LastDateUpdated)
-
-		guestsRaw = append(guestsRaw, guestRaw)
-	}
-
-	if err != nil {
-		errorMsg := `Error: Issue occured while setting Guest
-      variables.`
-		return []models.Guest{}, errors.New(errorMsg)
-	}
-
-	// Validation block for database data
-	guests := guestsClean(guestsRaw)
-
-	return guests, nil
-}
-
 //GetGuest : GetGuest
 func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
-	log.Println("Invoking the Get Guest Repository")
 
+	// Initialize an instance of the GuestRaw struct
 	var guestRaw models.GuestRaw
-	var guestsRaw []models.GuestRaw
 
 	sqlGuestRawGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
 			unit_num, st_address, state, city, zip, tel_num, email,
@@ -74,9 +27,51 @@ func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
 	rows, err := db.Query(sqlGuestRawGet, id)
 
 	if err != nil {
-		errorMsg := `Error: Issue occured while retrieving Guest info
-      from the database.`
+		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
 		return models.Guest{}, errors.New(errorMsg)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&guestRaw.ID, &guestRaw.DateEnrolled, &guestRaw.Status, &guestRaw.FirstName, &guestRaw.LastName, &guestRaw.Gender,
+			&guestRaw.UnitNum, &guestRaw.StAddress, &guestRaw.State, &guestRaw.City, &guestRaw.Zip, &guestRaw.TelNum, &guestRaw.Email,
+			&guestRaw.ChildNum, &guestRaw.AdultNum, &guestRaw.PlaceOfWorship, &guestRaw.IsMember, &guestRaw.IsBaptized,
+			&guestRaw.IsEspanol, &guestRaw.IsUnemployed, &guestRaw.IsHomeless, &guestRaw.IsFamily,
+			&guestRaw.IsContactOk, &guestRaw.Allergies, &guestRaw.Notes, &guestRaw.LastDateUpdated)
+	}
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
+		return models.Guest{}, errors.New(errorMsg)
+	}
+
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	guest := guestClean(guestRaw)
+
+	return guest, nil
+}
+
+//GetGuests : GetGuests
+func (g GuestRepository) GetGuests(db *sql.DB) ([]models.Guest, int, error) {
+
+	// Initialize an instance of the GuestRaw struct
+	var guestRaw models.GuestRaw
+	// Initialize an slice instance of the GuestRaw struct
+	var guestsRaw []models.GuestRaw
+
+	sqlGuestsRawGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
+			unit_num, st_address, state, city, zip, tel_num, email,
+			count_children, count_adults, worship_place, is_member, is_baptized,
+			is_espanol, is_unemployed, is_homeless, is_family,
+			is_contact_ok, allergies, notes, last_date_updated
+		FROM pantry.guests`
+
+	rows, err := db.Query(sqlGuestsRawGet)
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
+		return []models.Guest{}, 0, errors.New(errorMsg)
 	}
 
 	for rows.Next() {
@@ -90,24 +85,28 @@ func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
 	}
 
 	if err != nil {
-		errorMsg := `Error: Issue occured while setting Guest info
-      variables.`
-		return models.Guest{}, errors.New(errorMsg)
+		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
+		return []models.Guest{}, 0, errors.New(errorMsg)
 	}
 
-	// Validation block for database data
-	guest := guestClean(guestRaw)
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	guests := guestsClean(guestsRaw)
 
-	return guest, nil
+	// Let's count the items in the group. This will be used for logging
+	// purposes.
+	guestsSize := len(guests)
+
+	return guests, guestsSize, nil
 }
 
 //AddGuest : AddGuest
 func (g GuestRepository) AddGuest(db *sql.DB, guest models.Guest) (int8, error) {
-	log.Println("Invoking the Add Guest Repository")
 
-	// First thing is to validate the input data, if the data does not
-	// seem right then we return an error
-	_, err := guestValidate(guest)
+	// First thing first: validating the data, if the data does not meet
+	// requirements, an error is issued back to the client
+	guest, err := guestValidate(guest)
 
 	if err != nil {
 		return 0, err
@@ -136,22 +135,60 @@ func (g GuestRepository) AddGuest(db *sql.DB, guest models.Guest) (int8, error) 
 	err = result.Scan(&guest.ID)
 
 	if err != nil {
-		errorMsg := `Error: Issue occured while setting Guest info
-      variables.`
+		errorMsg := `[ERROR] Issue occured while setting Guests variables in db.`
 		return 0, errors.New(errorMsg)
 	}
 
-	//Int8 is converted to int64 then to a string to output Guest ID
-	guestID := strconv.FormatInt(int64(guest.ID), 10)
-
-	guestSuccessMsg := `%s %s has been successfully saved with the Guest ID of %s`
-	log.Printf(guestSuccessMsg, guest.FirstName, guest.LastName, guestID)
-
-	// guestMessage := `Guest has been successfully saved with ID of:`
-	// log.Println(guestMessage, guest.ID)
-
 	return guest.ID, nil
 }
+
+//UpdateGuest : UpdateGuest
+func (g GuestRepository) UpdateGuest(db *sql.DB, guest models.Guest) error {
+
+	// First thing first: validating the data, if the data does not meet
+	// requirements, an error is issued back to the client
+	guest, err := guestValidate(guest)
+
+	if err != nil {
+		return err
+	}
+
+	// After validation, we need to set the current date in which this
+	// record was updated. It is good record-keeping habits to keep the
+	// most current details of every Guest.
+	guest.LastDateUpdated = time.Now()
+
+	sqlGuestUpdate := `UPDATE pantry.guests SET
+			status = $1, first_name = $2, last_name = $3, gender = $4,
+			unit_num = $5, st_address = $6, state = $7, city = $8,
+			zip = $9, tel_num = $10, email = $11, count_children = $12,
+			count_adults = $13, worship_place = $14, is_member = $15,
+			is_baptized = $16, is_espanol = $17, is_unemployed = $18,
+			is_homeless = $19, is_family = $20, is_contact_ok = $21,
+			allergies = $22, notes = $23, last_date_updated = $24
+		WHERE id = $25`
+
+	_, err = db.Exec(sqlGuestUpdate,
+		guest.Status, guest.FirstName, guest.LastName, guest.Gender,
+		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
+		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
+		guest.IsEspanol, guest.IsUnemployed, guest.IsHomeless, guest.IsFamily,
+		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated, guest.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//RemoveGuest : RemoveGuest
+func (g GuestRepository) RemoveGuest(db *sql.DB) error {
+
+	return nil
+}
+
+// ********************* Helper Functions ********************* //
 
 func guestClean(guestRaw models.GuestRaw) models.Guest {
 	var guest models.Guest
@@ -289,8 +326,6 @@ func guestClean(guestRaw models.GuestRaw) models.Guest {
 	return guest
 }
 
-// Wrapper function to break the collection of Guests to a single
-// record and validate through guestClean
 func guestsClean(guestsRaw []models.GuestRaw) []models.Guest {
 
 	var guests []models.Guest
@@ -308,13 +343,16 @@ func guestsClean(guestsRaw []models.GuestRaw) []models.Guest {
 func guestValidate(guest models.Guest) (models.Guest, error) {
 
 	if guest.FirstName == "" {
-		return models.Guest{}, errors.New("First name cannot be empty")
+		validationMsg := "[ERROR] First name cannot be empty."
+		return models.Guest{}, errors.New(validationMsg)
 	}
 	if guest.LastName == "" {
-		return models.Guest{}, errors.New("Last name cannot be empty")
+		validationMsg := "[ERROR] Last name cannot be empty."
+		return models.Guest{}, errors.New(validationMsg)
 	}
 	if guest.StAddress == "" && guest.IsHomeless == "N" {
-		return models.Guest{}, errors.New("Street Address cannot be empty, unless guest is homeless")
+		validationMsg := "[ERROR] Street Address cannot be empty, unless guest is homeless."
+		return models.Guest{}, errors.New(validationMsg)
 	}
 
 	return guest, nil

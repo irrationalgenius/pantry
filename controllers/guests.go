@@ -3,6 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"pantry/models"
@@ -16,40 +17,9 @@ import (
 // GuestController : GuestController
 type GuestController struct{}
 
-var guests []models.Guest
-
-// GetGuests : GetGuests
-func (g GuestController) GetGuests(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get all Guests Controller")
-
-		// Initialize an instance of the repository and assign to
-		// the guestRepo variable
-		guestRepo := repository.GuestRepository{}
-
-		// Invoke the GetGuests method by the guestRepo instance and assign
-		// the value to the variables guests and err
-		guests, err := guestRepo.GetGuests(db)
-
-		// If an error arises handle it using the SendError function
-		if err != nil {
-			utils.SendError(w, http.StatusInternalServerError, err)
-			utils.LogFatal(err)
-		}
-		//
-		// // When successful send the results and status code to the client
-		w.Header().Set("Content-Type", "application/json")
-		utils.SendSuccess(w, guests)
-	}
-}
-
 //GetGuest : GetGuest
 func (g GuestController) GetGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get a speific Guest Controller")
-
-		// Initialize a variable with the type of the Error struct
-		var error models.Error
 
 		// Retreieve the URL parameters as "r" and insert into a
 		// map data type as "params"
@@ -60,41 +30,83 @@ func (g GuestController) GetGuest(db *sql.DB) http.HandlerFunc {
 
 		// Convert the URL parameter value to an int,
 		// rather than a string
-		id, _ := strconv.Atoi(params["id"])
+		id, err := strconv.Atoi(params["id"])
+
+		if err != nil {
+			utils.SendError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		guest, err := guestRepo.GetGuest(db, id)
 
 		if err != nil {
-			if err == sql.ErrNoRows {
-				error.Message = "Error: The Record was not found"
-				utils.SendError(w, http.StatusNotFound, error)
-				return
-			} else {
-				utils.SendError(w, http.StatusInternalServerError, err)
-				return
-			}
-		}
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
 
-		// When successful send the results and status code to the client
-		w.Header().Set("Content-Type", "application/json")
-		utils.SendSuccess(w, guest)
+			getSuccessMsg := `[INFO] %s %s's record is successfully retrieved.`
+			getSuccessMsg = fmt.Sprintf(getSuccessMsg, guest.FirstName, guest.LastName)
+
+			log.Println(getSuccessMsg)
+
+			// When successful send the results and status code to the client
+			w.Header().Set("Content-Type", "application/json")
+			utils.SendSuccess(w, guest)
+			utils.SendSuccess(w, getSuccessMsg)
+		}
+	}
+}
+
+// GetGuests : GetGuests
+func (g GuestController) GetGuests(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Initialize an instance of the Guest struct
+		var guests []models.Guest
+
+		// Initialize an instance of the repository and assign to
+		// the guestRepo variable
+		guestRepo := repository.GuestRepository{}
+
+		// Invoke the GetGuests method by the guestRepo instance and assign
+		// the value to the variables guests and err
+		guests, guestsSize, err := guestRepo.GetGuests(db)
+
+		// If an error arises handle it using the SendError function
+		if err != nil {
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+			//Int8 is converted to int64 then to a string to output Guest ID
+			guestsSize := strconv.FormatInt(int64(guestsSize), 10)
+
+			getSuccessMsg := `[INFO] %s Guests successfully retrieved.`
+			getSuccessMsg = fmt.Sprintf(getSuccessMsg, guestsSize)
+
+			log.Println(getSuccessMsg)
+
+			// When successful send the results and status code to the client
+			w.Header().Set("Content-Type", "application/json")
+			utils.SendSuccess(w, guests)
+			utils.SendSuccess(w, getSuccessMsg)
+		}
 	}
 }
 
 // AddGuest : AddGuest
 func (g GuestController) AddGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Guest Adding Controller")
 
 		// Initialize a variable with the type of the Guest struct
 		var guest models.Guest
 		// Initialize a variable with the type of the Visit struct
-		var visit models.Visit
+		// var visit models.Visit
 
 		// Handle the response Body and map values to the hex value
-		// of the book var
+		// of the guest var
 		json.NewDecoder(r.Body).Decode(&guest)
 
+		//
 		guestRepo := repository.GuestRepository{}
 		guestID, err := guestRepo.AddGuest(db, guest)
 
@@ -107,56 +119,55 @@ func (g GuestController) AddGuest(db *sql.DB) http.HandlerFunc {
 		// in the current object
 		guest.ID = guestID
 
-		// Dummy note used to save with the record to ensure correct saving
-		// of database vars, used for debugging
-		// visit.Notes = "This is a dummy note to save with the visit record."
-
-		visitRepo := repository.VisitRepository{}
-		err = visitRepo.AddVisit(db, guest, visit)
+		// visitRepo := repository.VisitRepository{}
+		// err = visitRepo.AddGuestVisit(db, guest, visit)
 
 		if err != nil {
-			utils.SendError(w, http.StatusInternalServerError, err)
-			utils.LogFatal(err)
-		}
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+			//Int8 is converted to int64 then to a string to output Guest ID
+			guestIDStr := strconv.FormatInt(int64(guest.ID), 10)
 
-		// When successful send the results and status code to the client
-		w.Header().Set("Content-Type", "application/json")
-		utils.SendSuccess(w, "Success")
+			addSuccessMsg := `[INFO] %s %s is successfully saved with the Guest ID of %s`
+			addSuccessMsg = fmt.Sprintf(addSuccessMsg, guest.FirstName, guest.LastName, guestIDStr)
+
+			log.Println(addSuccessMsg)
+
+			w.Header().Set("Content-Type", "text/plain")
+			utils.SendSuccess(w, addSuccessMsg)
+		}
 	}
 }
 
 // UpdateGuest : UpdateGuest
 func (g GuestController) UpdateGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Updating a guest method was invoked")
+
+		// Initialize a variable with the type of the Guest struct
+		var guest models.Guest
+
+		// Retrieves the response body and maps it to the guest struct
+		json.NewDecoder(r.Body).Decode(&guest)
+
 		//
-		// 		// Initialize a variable with the type of the Book struct
-		// 		var book models.Book
-		// 		// Initialize a variable with the type of the Error struct
-		// 		var error models.Error
-		//
-		// 		// Retrieves the response body and maps it to the book variable
-		// 		json.NewDecoder(r.Body).Decode(&book)
-		//
-		// 		// Validate book data, before saving details
-		// 		if book.ID == 0 || book.Author == "" || book.Title == "" || book.Year == "" {
-		// 			error.Message = "Cannot save record with missing data."
-		// 			utils.SendError(w, http.StatusBadRequest, error)
-		// 			return
-		// 		}
-		//
-		// 		bookRepo := bookRepository.BookRepository{}
-		// 		rowsUpdated, err := bookRepo.UpdateBook(db, book)
-		//
-		// 		if err != nil {
-		// 			error.Message = "Server error"
-		// 			utils.SendError(w, http.StatusInternalServerError, error)
-		// 			return
-		// 		}
-		//
-		// 		// When successful send the results and status code to the client
-		// 		w.Header().Set("Content-Type", "text/plain")
-		// 		utils.SendSuccess(w, rowsUpdated)
+		guestRepo := repository.GuestRepository{}
+		err := guestRepo.UpdateGuest(db, guest)
+
+		// If any errors write to the env log and return message to client,
+		// otherwise send a successful operation
+		if err != nil {
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+			updateSuccessMsg := "[INFO] %s %s's information is successfully updated."
+			updateSuccessMsg = fmt.Sprintf(updateSuccessMsg, guest.FirstName, guest.LastName)
+
+			log.Println(updateSuccessMsg)
+
+			w.Header().Set("Content-Type", "text/plain")
+			utils.SendSuccess(w, updateSuccessMsg)
+		}
 	}
 }
 

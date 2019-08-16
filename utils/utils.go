@@ -9,6 +9,16 @@ import (
 //Tester : Tester
 type Tester struct{}
 
+//TestFuncStruct : TestFuncStruct
+func (l Tester) TestFuncStruct() {
+	log.Println("This package works with initiailized instance")
+}
+
+//TestFunc : TestFunc
+func TestFunc() {
+	log.Println("This package works")
+}
+
 // SendError : SendError
 func SendError(w http.ResponseWriter, status int, err interface{}) {
 	w.WriteHeader(status)
@@ -27,14 +37,4 @@ func LogFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-//TestFuncStruct : TestFuncStruct
-func (l Tester) TestFuncStruct() {
-	log.Println("This package works")
-}
-
-//TestFunc : TestFunc
-func TestFunc() {
-	log.Println("This package works")
 }

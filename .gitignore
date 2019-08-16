@@ -5,3 +5,4 @@ resources/db/data-init/
 resources/db/postgres_psql.txt
 resources/db/sql_guest_info.sql
 .env
+history.txt

@@ -34,25 +34,30 @@ func main() {
 	db = drivers.PgConnect()
 
 	// Retrieves all application config params from the database
-	appVars = controllers.GetAppVars(db)
+	controllers.GetAppVars(db)
 
-	// Displays the splashscreen by the console
-	controllers.SplashScreen(appVars)
-
-	// Create an instance of the Contoller object, and assign its value to booker
+	// Create an instance of the Contoller object, and assign its value to guest
 	guest := controllers.GuestController{}
+	visit := controllers.VisitController{}
 
 	// Create an instance of the New Router function in mux
 	router := mux.NewRouter()
 
 	// Map each URL route to a speific handler function
+	// Handle all Guest object states
 	router.HandleFunc("/guests", guest.GetGuests(db)).Methods("GET")
-	router.HandleFunc("/guest/{id}", guest.GetGuest(db)).Methods("GET")
-	router.HandleFunc("/guest", guest.AddGuest(db)).Methods("POST")
-	router.HandleFunc("/guest", guest.UpdateGuest(db)).Methods("PUT")
-	router.HandleFunc("/guest/{id}", guest.RemoveGuest(db)).Methods("DELETE")
+	router.HandleFunc("/guests/{id}", guest.GetGuest(db)).Methods("GET")
+	router.HandleFunc("/guests", guest.AddGuest(db)).Methods("POST")
+	router.HandleFunc("/guests", guest.UpdateGuest(db)).Methods("PUT")
+	router.HandleFunc("/guests/{id}", guest.UpdateGuest(db)).Methods("PUT")
+	router.HandleFunc("/guests/{id}", guest.RemoveGuest(db)).Methods("DELETE")
+
+	// Handle all Visit object states per Guest object
+	router.HandleFunc("/guests/{id}/visits", visit.GetGuestVisits(db)).Methods("GET")
+	router.HandleFunc("/guests/{id}/visits", visit.AddGuestVisit(db)).Methods("POST")
 
 	// Run the server, if any errors exits then logFatal()
-	fmt.Println("Server is running at port 8000")
 	log.Fatal(http.ListenAndServe(":8000", router))
+	fmt.Println("Server is running at port 8000")
+
 }
