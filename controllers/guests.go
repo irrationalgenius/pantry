@@ -171,37 +171,58 @@ func (g GuestController) UpdateGuest(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// RemoveGuest : RemoveGuest
-func (g GuestController) RemoveGuest(db *sql.DB) http.HandlerFunc {
+// UpdateGuests : UpdateGuests
+func (g GuestController) UpdateGuests(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Removing a guest method was invoked")
+
+		// Initialize a variable with the type of the Guest struct
+		// var guest models.Guest
 		//
-		// 		// Initialize a variable with the type of the Error struct
-		// 		var error models.Error
-		// 		// Retreieve the URL parameters as "r" and insert into a
-		// 		// map data type as "params"
-		// 		params := mux.Vars(r)
+		// // Retrieves the response body and maps it to the guest struct
+		// json.NewDecoder(r.Body).Decode(&guest)
 		//
-		// 		bookRepo := bookRepository.BookRepository{}
+		// //
+		// guestRepo := repository.GuestRepository{}
+		// err := guestRepo.UpdateGuest(db, guest)
 		//
-		// 		id, _ := strconv.Atoi(params["id"])
+		// // If any errors write to the env log and return message to client,
+		// // otherwise send a successful operation
+		// if err != nil {
+		// 	log.Println(err.Error())
+		// 	utils.SendError(w, http.StatusInternalServerError, err.Error())
+		// } else {
+		// 	updateSuccessMsg := "[INFO] %s %s's information is successfully updated."
+		// 	updateSuccessMsg = fmt.Sprintf(updateSuccessMsg, guest.FirstName, guest.LastName)
 		//
-		// 		rowsDeleted, err := bookRepo.RemoveBook(db, id)
+		// 	log.Println(updateSuccessMsg)
 		//
-		// 		if err != nil {
-		// 			error.Message = "Server error"
-		// 			utils.SendError(w, http.StatusInternalServerError, error)
-		// 			return
-		// 		}
-		//
-		// 		if rowsDeleted == 0 {
-		// 			error.Message = "Record not found"
-		// 			utils.SendError(w, http.StatusNotFound, error)
-		// 			return
-		// 		}
-		//
-		// 		// When successful send the results and status code to the client
-		// 		w.Header().Set("Content-Type", "text/plain")
-		// 		utils.SendSuccess(w, rowsDeleted)
+		// 	w.Header().Set("Content-Type", "text/plain")
+		// 	utils.SendSuccess(w, updateSuccessMsg)
+		// }
+	}
+}
+
+// ArchiveGuest : ArchiveGuest
+func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Retreieve the URL parameters as "r" and insert into a
+		// map data type as "params"
+		params := mux.Vars(r)
+
+		id, _ := strconv.Atoi(params["id"])
+
+		guestRepo := repository.GuestRepository{}
+
+		err := guestRepo.ArchiveGuest(db, id)
+
+		if err != nil {
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+			// When successful send the results and status code to the client
+			w.Header().Set("Content-Type", "text/plain")
+			utils.SendSuccess(w, "Guest was successfully archived.")
+		}
 	}
 }

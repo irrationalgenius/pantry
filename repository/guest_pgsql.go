@@ -182,8 +182,84 @@ func (g GuestRepository) UpdateGuest(db *sql.DB, guest models.Guest) error {
 	return nil
 }
 
-//RemoveGuest : RemoveGuest
-func (g GuestRepository) RemoveGuest(db *sql.DB) error {
+//ArchiveGuest : ArchiveGuest
+func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
+
+	// Initialize an instance of the GuestRaw struct
+	var guestRaw models.GuestRaw
+	var archiveDateLast time.Time = time.Now()
+	var archiveMethod = "D"
+	var archiveCount = 1
+
+	sqlGuestRawGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
+			unit_num, st_address, state, city, zip, tel_num, email,
+			count_children, count_adults, worship_place, is_member, is_baptized,
+			is_espanol, is_unemployed, is_homeless, is_family,
+			is_contact_ok, allergies, notes, last_date_updated
+		FROM pantry.guests
+		WHERE id = $1`
+
+	rows, err := db.Query(sqlGuestRawGet, id)
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
+		return errors.New(errorMsg)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&guestRaw.ID, &guestRaw.DateEnrolled, &guestRaw.Status, &guestRaw.FirstName, &guestRaw.LastName, &guestRaw.Gender,
+			&guestRaw.UnitNum, &guestRaw.StAddress, &guestRaw.State, &guestRaw.City, &guestRaw.Zip, &guestRaw.TelNum, &guestRaw.Email,
+			&guestRaw.ChildNum, &guestRaw.AdultNum, &guestRaw.PlaceOfWorship, &guestRaw.IsMember, &guestRaw.IsBaptized,
+			&guestRaw.IsEspanol, &guestRaw.IsUnemployed, &guestRaw.IsHomeless, &guestRaw.IsFamily,
+			&guestRaw.IsContactOk, &guestRaw.Allergies, &guestRaw.Notes, &guestRaw.LastDateUpdated)
+	}
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
+		return errors.New(errorMsg)
+	}
+
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	guest := guestClean(guestRaw)
+
+	// 29 Elements for Retrieval
+	sqlGuestAdd := `INSERT INTO pantry.guests_archive(
+			id, date_enrolled, status, first_name, last_name, gender,
+			unit_num, st_address, state, city, zip, tel_num, email,
+			count_children, count_adults, worship_place, is_member, is_baptized,
+			is_espanol, is_unemployed, is_homeless, is_family,
+			is_contact_ok, allergies, notes, last_date_updated,
+			archive_count, archive_last_date_updated, archive_method)
+		VALUES($1, $2, $3, $4,
+		  $5, $6, $7, $8, $9, $10, $11,
+		  $12, $13, $14, $15, $16,
+		  $17, $18, $19, $20,
+		  $21, $22, $23, $24, $25, $26,
+			$27, $28, $29)`
+
+	_, err = db.Exec(sqlGuestAdd,
+		guest.ID, guest.DateEnrolled, guest.Status, guest.FirstName, guest.LastName, guest.Gender,
+		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
+		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
+		guest.IsEspanol, guest.IsUnemployed, guest.IsHomeless, guest.IsFamily,
+		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated, archiveCount, archiveDateLast, archiveMethod)
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while inserting Guest record into Archival table.`
+		return errors.New(errorMsg)
+	}
+
+	// Remove the Guest record from the primary collection.
+	sqlGuestRemove := `DELETE FROM pantry.guests WHERE id = $1`
+
+	_, err = db.Exec(sqlGuestRemove, id)
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while removing Guest record from original table.`
+		return errors.New(errorMsg)
+	}
 
 	return nil
 }

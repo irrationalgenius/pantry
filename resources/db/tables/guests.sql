@@ -1,4 +1,3 @@
--- Drop table
 
 DROP TABLE pantry.guests;
 
@@ -6,8 +5,8 @@ CREATE TABLE pantry.guests (
 	id serial NOT NULL, -- Unique Identifier
 	date_enrolled date NULL DEFAULT 'now'::text::date, -- The date of the first pantry visit
 	status varchar(10) NULL, -- Current status [A=Active; I=Inactive; W=Waiting; X=Archive]
-	first_name varchar(40) NULL, -- First name
-	last_name varchar(40) NULL, -- Last name
+	first_name varchar(40) NOT NULL, -- First name
+	last_name varchar(40) NOT NULL, -- Last name
 	gender varchar(6) NULL, -- Gender [M=Male; F=Female]
 	unit_num varchar(10) NULL, -- Number of the adress unit: street, apt, etc.
 	st_address varchar(50) NULL, -- Current Street Address
@@ -19,20 +18,21 @@ CREATE TABLE pantry.guests (
 	count_children int4 NULL, -- Total Household child count
 	count_adults int4 NULL, -- Total Household adult count
 	worship_place varchar(80) NULL, -- Primary place of worship
-	is_member varchar(1) NULL DEFAULT 'N', -- Is a Member of the Laurel Church of Christ
-	is_baptized varchar(1) NULL DEFAULT 'N', -- Is Baptized into Jesus Christ
-	is_espanol varchar(1) NULL DEFAULT 'N', -- Is Spanish speaking, Hispanic
-	is_unemployed varchar(1) NULL DEFAULT 'N', -- Is looking for employment
-	is_homeless varchar(1) NULL DEFAULT 'N', -- Is the Guest Homeless? Does not have a Home? Stable roof over the head
-	is_family varchar(1) NULL DEFAULT 'N', -- Has at least 2 people that lives with guest
-	is_contact_ok varchar(1) NULL DEFAULT 'N', -- Is okay for Contact? [0 = No, -1 = Yes]
+	is_member varchar(1) NULL, -- Is a Member of the Laurel Church of Christ
+	is_baptized varchar(1) NULL, -- Is Baptized into Jesus Christ
+	is_espanol varchar(1) NULL, -- Is Spanish speaking, Hispanic
+	is_unemployed varchar(1) NULL, -- Is looking for employment
+	is_homeless varchar(1) NULL, -- Is the Guest Homeless? Does not have a Home? Stable roof over the head
+	is_family varchar(1) NULL, -- Has at least 2 people that lives with guest
+	is_contact_ok varchar(1) NULL, -- Is okay for Contact? [0 = No, -1 = Yes]
 	allergies text NULL, -- Note of known allergies pertaining to this guest
 	notes text NULL, -- Additional remarks
 	last_date_updated date NULL DEFAULT 'now'::text::date, -- Last date that this record of this Guest was updated
+
 	CONSTRAINT guests_pkey PRIMARY KEY (id),
 	CONSTRAINT status_chk CHECK (((status)::text = ANY ((ARRAY['Active'::character varying, 'Waiting'::character varying, 'Inactive'::character varying, 'Archive'::character varying])::text[])))
 );
-COMMENT ON TABLE pantry.guests IS 'A Collection of all Laurel Pantry Guests';
+COMMENT ON TABLE pantry.guests IS 'The Active Collection of Laurel Pantry Guests';
 
 -- Column comments
 

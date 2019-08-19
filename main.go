@@ -44,17 +44,23 @@ func main() {
 	router := mux.NewRouter()
 
 	// Map each URL route to a speific handler function
-	// Handle all Guest object states
+	// Handle all Guest object requests
 	router.HandleFunc("/guests", guest.GetGuests(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}", guest.GetGuest(db)).Methods("GET")
 	router.HandleFunc("/guests", guest.AddGuest(db)).Methods("POST")
-	router.HandleFunc("/guests", guest.UpdateGuest(db)).Methods("PUT")
+	router.HandleFunc("/guests", guest.UpdateGuests(db)).Methods("PUT")
 	router.HandleFunc("/guests/{id}", guest.UpdateGuest(db)).Methods("PUT")
-	router.HandleFunc("/guests/{id}", guest.RemoveGuest(db)).Methods("DELETE")
+	router.HandleFunc("/guests/{id}", guest.ArchiveGuest(db)).Methods("DELETE")
 
-	// Handle all Visit object states per Guest object
+	// Handle all Visit object requests per Guest object
 	router.HandleFunc("/guests/{id}/visits", visit.GetGuestVisits(db)).Methods("GET")
+	router.HandleFunc("/guests/{id}/visits/{id}", visit.GetGuestVisit(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}/visits", visit.AddGuestVisit(db)).Methods("POST")
+	router.HandleFunc("/guests/{id}/visits", visit.UpdateGuestVisits(db)).Methods("PUT")
+	router.HandleFunc("/guests/{id}/visits/{id}", visit.UpdateGuestVisit(db)).Methods("PUT")
+	router.HandleFunc("/guests/{id}/visits/{id}", visit.ArchiveGuestVisit(db)).Methods("DELETE")
+
+	// Handle all Pantry report requests
 
 	// Run the server, if any errors exits then logFatal()
 	log.Fatal(http.ListenAndServe(":8000", router))

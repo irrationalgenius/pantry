@@ -132,7 +132,7 @@ func visitValidate(db *sql.DB, guest models.Guest, visit models.Visit) (bool, er
 	// system returns to generate a new visit.
 	if err != nil {
 		if err == sql.ErrNoRows || nextVisitCheck.Before(visit.DateofVisitLast) {
-			logMsg := `Info: No visit record was found for %s %s. Welcome to the Pantry. :)`
+			logMsg := `[INFO] No visit record was found for %s %s. Welcome to the Pantry. :)`
 			log.Printf(logMsg, guest.FirstName, guest.LastName)
 
 			return true, nil
@@ -145,11 +145,11 @@ func visitValidate(db *sql.DB, guest models.Guest, visit models.Visit) (bool, er
 	// the system returns the message below, otherwise this check passes, this
 	// function returns true and a new visit is generated.
 	if nextVisitCheck.After(visit.DateofVisitLast) {
-		errorMsg := `The system has on record a recent visit. Visit was not added`
+		errorMsg := `[INFO] The system has on record a recent visit. Visit was not added`
 		return false, errors.New(errorMsg)
 	}
 
-	logMsg := `Info: No visit record was found for %s %s. Welcome to the Pantry. :)`
+	logMsg := `[INFO] No visit record was found for %s %s. Welcome to the Pantry. :)`
 	log.Printf(logMsg, guest.FirstName, guest.LastName)
 
 	return true, nil

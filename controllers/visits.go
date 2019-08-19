@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"pantry/models"
 	"pantry/repository"
 	"pantry/utils"
@@ -89,7 +88,7 @@ func (v VisitController) AddGuestVisit(db *sql.DB) http.HandlerFunc {
 			utils.SendError(w, http.StatusInternalServerError, err.Error())
 		} else {
 			addSuccessMsg := `[INFO] %s %s's visit is successfully saved. Next visit on %s`
-			addSuccessMsg = fmt.Sprintf(addSuccessMsg, guest.FirstName, guest.LastName, os.Getenv("APP_VISIT_INTERVAL"))
+			addSuccessMsg = fmt.Sprintf(addSuccessMsg, guest.FirstName, guest.LastName, visit.DateofVisitNext)
 
 			log.Println(addSuccessMsg)
 
@@ -108,8 +107,17 @@ func (v VisitController) UpdateGuestVisit(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-//RemoveGuestVisit : RemoveGuestVisit
-func (v VisitController) RemoveGuestVisit(db *sql.DB) http.HandlerFunc {
+//UpdateGuestVisits : UpdateGuestVisits
+func (v VisitController) UpdateGuestVisits(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Invoking the Get Guest Visits method")
+
+		// db.Query(`select `)
+	}
+}
+
+//ArchiveGuestVisit : ArchiveGuestVisit
+func (v VisitController) ArchiveGuestVisit(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Invoking the Get Guest Visits method")
 
