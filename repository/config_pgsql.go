@@ -29,12 +29,10 @@ func GetAppVars(db *sql.DB) error {
 		err = rows.Scan(&config.Name, &config.Value)
 
 		os.Setenv(config.Name, config.Value)
-
 	}
 
 	if err != nil {
-		errorMsg := `Error: Issue occured while setting Config
-      params`
+		errorMsg := `Error: Issue occured while setting Config params`
 		return errors.New(errorMsg)
 	}
 

@@ -13,6 +13,10 @@ type GuestRepository struct{}
 //GetGuest : GetGuest
 func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
 
+	if id == 0 {
+		return models.Guest{}, errors.New("[ERROR] Guest ID is not valid")
+	}
+
 	// Initialize an instance of the GuestRaw struct
 	var guestRaw models.GuestRaw
 
@@ -191,6 +195,11 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	var archiveMethod = "D"
 	var archiveCount = 1
 
+	// We are going to create a transaction because we have a few statements
+	// to execute. To ensure every step completes successfully without
+	// anyone doing halfway work, and not telling us
+	tx, _ := db.Begin()
+
 	sqlGuestRawGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
 			unit_num, st_address, state, city, zip, tel_num, email,
 			count_children, count_adults, worship_place, is_member, is_baptized,
@@ -199,9 +208,10 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 		FROM pantry.guests
 		WHERE id = $1`
 
-	rows, err := db.Query(sqlGuestRawGet, id)
+	rows, err := tx.Query(sqlGuestRawGet, id)
 
 	if err != nil {
+		_ = tx.Rollback()
 		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
 		return errors.New(errorMsg)
 	}
@@ -215,6 +225,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	}
 
 	if err != nil {
+		_ = tx.Rollback()
 		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
 		return errors.New(errorMsg)
 	}
@@ -239,7 +250,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 		  $21, $22, $23, $24, $25, $26,
 			$27, $28, $29)`
 
-	_, err = db.Exec(sqlGuestAdd,
+	_, err = tx.Exec(sqlGuestAdd,
 		guest.ID, guest.DateEnrolled, guest.Status, guest.FirstName, guest.LastName, guest.Gender,
 		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
 		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
@@ -247,6 +258,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated, archiveCount, archiveDateLast, archiveMethod)
 
 	if err != nil {
+		_ = tx.Rollback()
 		errorMsg := `[ERROR] Issue occured while inserting Guest record into Archival table.`
 		return errors.New(errorMsg)
 	}
@@ -254,18 +266,22 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	// Remove the Guest record from the primary collection.
 	sqlGuestRemove := `DELETE FROM pantry.guests WHERE id = $1`
 
-	_, err = db.Exec(sqlGuestRemove, id)
+	_, err = tx.Exec(sqlGuestRemove, id)
 
 	if err != nil {
+		_ = tx.Rollback()
 		errorMsg := `[ERROR] Issue occured while removing Guest record from original table.`
 		return errors.New(errorMsg)
 	}
+
+	_ = tx.Commit()
 
 	return nil
 }
 
 // ********************* Helper Functions ********************* //
 
+// Handles database NULLS between default Go values
 func guestClean(guestRaw models.GuestRaw) models.Guest {
 	var guest models.Guest
 
@@ -402,6 +418,8 @@ func guestClean(guestRaw models.GuestRaw) models.Guest {
 	return guest
 }
 
+// Sends a slice (collection) of raw database Guests to the
+// guestClean function, one at a time.
 func guestsClean(guestsRaw []models.GuestRaw) []models.Guest {
 
 	var guests []models.Guest
@@ -416,6 +434,8 @@ func guestsClean(guestsRaw []models.GuestRaw) []models.Guest {
 	return guests
 }
 
+// Validates all incoming data, to ensure no junk is given to the
+// database. Garbage in -> Garbage out
 func guestValidate(guest models.Guest) (models.Guest, error) {
 
 	if guest.FirstName == "" {
@@ -432,4 +452,22 @@ func guestValidate(guest models.Guest) (models.Guest, error) {
 	}
 
 	return guest, nil
+}
+
+// Checks all incoming Guest IDs agaisnt the database.
+// may be better to create a system map of all current guest ids.
+func guestCheckID(db *sql.DB, id int) error {
+
+	// var guestIDs []int
+	//
+	// sqlGuestGetIDs := `SELECT id from pantry.guests`
+	//
+	// rows, err := db.Query(sqlGuestGetIDs)
+	//
+	// for rows.Next() {
+	// 	err = rows.Scan(guestIDs)
+	//
+	// }
+
+	return nil
 }

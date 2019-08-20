@@ -2,8 +2,8 @@
 # Pantry Development Board
 
 ### Priority
-- [ ] Core Function: ArchiveGuest Implementation - Convert to a Transaction
 - [ ] Core Function: ArchiveGuest Implementation - Testing
+    - [ ] Create a function to check Guest ID's
 
 ***********
 ### Backlog
