@@ -13,8 +13,11 @@ type GuestRepository struct{}
 //GetGuest : GetGuest
 func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
 
-	if id == 0 {
-		return models.Guest{}, errors.New("[ERROR] Guest ID is not valid")
+	// Check if the guest exists in the db before processing
+	err := guestCheckID(db, id)
+
+	if err != nil {
+		return models.Guest{}, err
 	}
 
 	// Initialize an instance of the GuestRaw struct
@@ -192,8 +195,9 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	// Initialize an instance of the GuestRaw struct
 	var guestRaw models.GuestRaw
 	var archiveDateLast time.Time = time.Now()
+	// Set archiveMethod to "D" denoting this record was moved using
+	// the application.
 	var archiveMethod = "D"
-	var archiveCount = 1
 
 	// We are going to create a transaction because we have a few statements
 	// to execute. To ensure every step completes successfully without
@@ -212,8 +216,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 
 	if err != nil {
 		_ = tx.Rollback()
-		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
-		return errors.New(errorMsg)
+		return err
 	}
 
 	for rows.Next() {
@@ -226,8 +229,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 
 	if err != nil {
 		_ = tx.Rollback()
-		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
-		return errors.New(errorMsg)
+		return err
 	}
 
 	// After the data is retrieved from the database, it must be
@@ -242,25 +244,24 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 			count_children, count_adults, worship_place, is_member, is_baptized,
 			is_espanol, is_unemployed, is_homeless, is_family,
 			is_contact_ok, allergies, notes, last_date_updated,
-			archive_count, archive_last_date_updated, archive_method)
+			archive_last_date_updated, archive_method)
 		VALUES($1, $2, $3, $4,
 		  $5, $6, $7, $8, $9, $10, $11,
 		  $12, $13, $14, $15, $16,
 		  $17, $18, $19, $20,
 		  $21, $22, $23, $24, $25, $26,
-			$27, $28, $29)`
+			$27, $28)`
 
 	_, err = tx.Exec(sqlGuestAdd,
 		guest.ID, guest.DateEnrolled, guest.Status, guest.FirstName, guest.LastName, guest.Gender,
 		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
 		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
 		guest.IsEspanol, guest.IsUnemployed, guest.IsHomeless, guest.IsFamily,
-		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated, archiveCount, archiveDateLast, archiveMethod)
+		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated, archiveDateLast, archiveMethod)
 
 	if err != nil {
 		_ = tx.Rollback()
-		errorMsg := `[ERROR] Issue occured while inserting Guest record into Archival table.`
-		return errors.New(errorMsg)
+		return err
 	}
 
 	// Remove the Guest record from the primary collection.
@@ -270,8 +271,84 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 
 	if err != nil {
 		_ = tx.Rollback()
-		errorMsg := `[ERROR] Issue occured while removing Guest record from original table.`
-		return errors.New(errorMsg)
+		return err
+	}
+
+	_ = tx.Commit()
+
+	return nil
+}
+
+//UnarchiveGuest : UnarchiveGuest
+func (g GuestRepository) UnarchiveGuest(db *sql.DB, id int) error {
+
+	// Initialize an instance of the GuestRaw struct
+	var guestRaw models.GuestRaw
+
+	tx, _ := db.Begin()
+
+	sqlArchGuestGet := `SELECT id, date_enrolled, status, first_name, last_name, gender,
+			unit_num, st_address, state, city, zip, tel_num, email,
+			count_children, count_adults, worship_place, is_member, is_baptized,
+			is_espanol, is_unemployed, is_homeless, is_family,
+			is_contact_ok, allergies, notes, last_date_updated
+		FROM pantry.guests_archive
+		WHERE id = $1`
+
+	row := tx.QueryRow(sqlArchGuestGet, id)
+
+	err := row.Scan(&guestRaw.ID, &guestRaw.DateEnrolled, &guestRaw.Status, &guestRaw.FirstName, &guestRaw.LastName, &guestRaw.Gender,
+		&guestRaw.UnitNum, &guestRaw.StAddress, &guestRaw.State, &guestRaw.City, &guestRaw.Zip, &guestRaw.TelNum, &guestRaw.Email,
+		&guestRaw.ChildNum, &guestRaw.AdultNum, &guestRaw.PlaceOfWorship, &guestRaw.IsMember, &guestRaw.IsBaptized,
+		&guestRaw.IsEspanol, &guestRaw.IsUnemployed, &guestRaw.IsHomeless, &guestRaw.IsFamily,
+		&guestRaw.IsContactOk, &guestRaw.Allergies, &guestRaw.Notes, &guestRaw.LastDateUpdated)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	guest := guestClean(guestRaw)
+
+	// Set the last updated date variable to now
+	guest.LastDateUpdated = time.Now()
+
+	// 27 Elements for insertion
+	sqlArchGuestAdd := `INSERT INTO pantry.guests(
+			id, date_enrolled, status, first_name, last_name, gender,
+			unit_num, st_address, state, city, zip, tel_num, email,
+			count_children, count_adults, worship_place, is_member, is_baptized,
+			is_espanol, is_unemployed, is_homeless, is_family,
+			is_contact_ok, allergies, notes, last_date_updated)
+		VALUES($1, $2, $3, $4,
+		  $5, $6, $7, $8, $9, $10, $11,
+		  $12, $13, $14, $15, $16,
+		  $17, $18, $19, $20,
+		  $21, $22, $23, $24, $25, $26)`
+
+	_, err = tx.Exec(sqlArchGuestAdd,
+		guest.ID, guest.DateEnrolled, guest.Status, guest.FirstName, guest.LastName, guest.Gender,
+		guest.UnitNum, guest.StAddress, guest.State, guest.City, guest.Zip, guest.TelNum, guest.Email,
+		guest.ChildNum, guest.AdultNum, guest.PlaceOfWorship, guest.IsMember, guest.IsBaptized,
+		guest.IsEspanol, guest.IsUnemployed, guest.IsHomeless, guest.IsFamily,
+		guest.IsContactOk, guest.Allergies, guest.Notes, guest.LastDateUpdated)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	// Remove the Guest record from the primary collection.
+	sqlArchGuestRemove := `DELETE FROM pantry.guests_archive WHERE id = $1`
+
+	_, err = tx.Exec(sqlArchGuestRemove, id)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
 	}
 
 	_ = tx.Commit()
@@ -458,16 +535,20 @@ func guestValidate(guest models.Guest) (models.Guest, error) {
 // may be better to create a system map of all current guest ids.
 func guestCheckID(db *sql.DB, id int) error {
 
-	// var guestIDs []int
-	//
-	// sqlGuestGetIDs := `SELECT id from pantry.guests`
-	//
-	// rows, err := db.Query(sqlGuestGetIDs)
-	//
-	// for rows.Next() {
-	// 	err = rows.Scan(guestIDs)
-	//
-	// }
+	var guestID int
+
+	sqlGuestGetID := `SELECT id FROM pantry.guests WHERE id = $1`
+
+	row := db.QueryRow(sqlGuestGetID, id)
+
+	err := row.Scan(&guestID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("[ERROR] Guest does not exist!")
+		}
+		return err
+	}
 
 	return nil
 }

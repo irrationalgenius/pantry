@@ -50,7 +50,7 @@ func main() {
 	router.HandleFunc("/guests", guest.AddGuest(db)).Methods("POST")
 	router.HandleFunc("/guests", guest.UpdateGuests(db)).Methods("PUT")
 	router.HandleFunc("/guests/{id}", guest.UpdateGuest(db)).Methods("PUT")
-	router.HandleFunc("/guests/{id}", guest.ArchiveGuest(db)).Methods("DELETE")
+	router.HandleFunc("/guests/{id}/{do}", guest.ArchiveGuest(db)).Methods("DELETE")
 
 	// Handle all Visit object requests per Guest object
 	router.HandleFunc("/guests/{id}/visits", visit.GetGuestVisits(db)).Methods("GET")

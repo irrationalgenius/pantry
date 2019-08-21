@@ -171,37 +171,6 @@ func (g GuestController) UpdateGuest(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// UpdateGuests : UpdateGuests
-func (g GuestController) UpdateGuests(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Initialize a variable with the type of the Guest struct
-		// var guest models.Guest
-		//
-		// // Retrieves the response body and maps it to the guest struct
-		// json.NewDecoder(r.Body).Decode(&guest)
-		//
-		// //
-		// guestRepo := repository.GuestRepository{}
-		// err := guestRepo.UpdateGuest(db, guest)
-		//
-		// // If any errors write to the env log and return message to client,
-		// // otherwise send a successful operation
-		// if err != nil {
-		// 	log.Println(err.Error())
-		// 	utils.SendError(w, http.StatusInternalServerError, err.Error())
-		// } else {
-		// 	updateSuccessMsg := "[INFO] %s %s's information is successfully updated."
-		// 	updateSuccessMsg = fmt.Sprintf(updateSuccessMsg, guest.FirstName, guest.LastName)
-		//
-		// 	log.Println(updateSuccessMsg)
-		//
-		// 	w.Header().Set("Content-Type", "text/plain")
-		// 	utils.SendSuccess(w, updateSuccessMsg)
-		// }
-	}
-}
-
 // ArchiveGuest : ArchiveGuest
 func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -214,15 +183,30 @@ func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
 
 		guestRepo := repository.GuestRepository{}
 
-		err := guestRepo.ArchiveGuest(db, id)
+		if params["do"] == "A" {
+			err := guestRepo.ArchiveGuest(db, id)
 
-		if err != nil {
-			log.Println(err.Error())
-			utils.SendError(w, http.StatusInternalServerError, err.Error())
-		} else {
-			// When successful send the results and status code to the client
-			w.Header().Set("Content-Type", "text/plain")
-			utils.SendSuccess(w, "Guest was successfully archived.")
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+			} else {
+				// When successful send the results and status code to the client
+				w.Header().Set("Content-Type", "text/plain")
+				utils.SendSuccess(w, "Guest is successfully Archived.")
+			}
+		}
+
+		if params["do"] == "U" {
+			err := guestRepo.UnarchiveGuest(db, id)
+
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+			} else {
+				// When successful send the results and status code to the client
+				w.Header().Set("Content-Type", "text/plain")
+				utils.SendSuccess(w, "Guest is successfully Unarchived.")
+			}
 		}
 	}
 }

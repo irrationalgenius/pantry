@@ -30,7 +30,6 @@ CREATE TABLE pantry.guests_archive (
 	last_date_updated date NOT NULL, -- Last date that this record of this Guest was updated on the original table
 
   -- Archival information
-  archive_count int NOT NULL,
   archive_last_date_updated date NOT NULL DEFAULT 'now'::text::date,
   archive_method varchar(1) NOT NULL, -- How was this record archived? [D=Deleted, X=Inserted by Procedure]
 

@@ -2,20 +2,25 @@
 # Pantry Development Board
 
 ### Priority
-- [ ] Core Function: ArchiveGuest Implementation - Testing
-    - [ ] Create a function to check Guest ID's
+- [ ] Core Function: GetGuestVisit(s)
+  - [ ] Develop Controllers: Single and Collection
+  - [ ] Develop Implementation: Single and Collection
+  - [ ] Correctly Configure Endpoint
+  - [ ] Testing
+- [ ] Core Function: UpdateGuestVisit
+  - [ ] Develop Controllers: Single and Collection
+  - [ ] Develop Implementation: Single and Collection
+  - [ ] Correctly Configure Endpoint
+  - [ ] Testing
 
 ***********
 ### Backlog
-
-- [ ] Core Function: GetGuestVisit Controller
-- [ ] Core Function: GetGuestVisit Implementation
-- [ ] Core Function: UpdateGuestVisit Controller
 - [ ] Core Function: RemoveGuestVisit Controller
 - [ ] Core Function: RemoveGuestVisit Implementation
 - [ ] Feature: Data Locking or User Privs
 - [ ] Feature: User Authentication (Login System)
 - [ ] Feature: Inventory Tracking
+- [ ] Rename backend project to "pantry-server"
 
 
 - Update Project Documentation
@@ -28,9 +33,9 @@
 REST? Representational State Transfer, and it is a software architectural style that defines a set of rules to be used when communicating between a client and a server.
 
 1. Endpoints must be Correctly defined
-  - [ ] Nouns, not Verbs
-  - [ ] Plurality, not singularity
-  - [ ] Sub-resource when closely related
+  - [x] Nouns, not Verbs
+  - [x] Plurality, not singularity
+  - [x] Sub-resource when closely related
 2. Implement the Correct HTTP Method
 3. Utilize the Correct HTTP Status Codes
 4. Document your Endpoints
