@@ -2,11 +2,6 @@
 # Pantry Development Board
 
 ### Priority
-- [ ] Core Function: GetGuestVisit(s)
-  - [ ] Develop Controllers: Single and Collection
-  - [ ] Develop Implementation: Single and Collection
-  - [ ] Correctly Configure Endpoint
-  - [ ] Testing
 - [ ] Core Function: UpdateGuestVisit
   - [ ] Develop Controllers: Single and Collection
   - [ ] Develop Implementation: Single and Collection
@@ -15,13 +10,13 @@
 
 ***********
 ### Backlog
-- [ ] Core Function: RemoveGuestVisit Controller
-- [ ] Core Function: RemoveGuestVisit Implementation
+- [ ] Core Function: ArchiveGuestVisit
+  - [ ] Join this functionality with the Guest Archive
 - [ ] Feature: Data Locking or User Privs
 - [ ] Feature: User Authentication (Login System)
 - [ ] Feature: Inventory Tracking
-- [ ] Rename backend project to "pantry-server"
-
+- [ ] Rename backend project to "pantry-services"
+- [ ] You may not need the *check* functions, if you properly catch the errors
 
 - Update Project Documentation
   - [ ] [Github Markdown](https://guides.github.com/features/mastering-markdown/)

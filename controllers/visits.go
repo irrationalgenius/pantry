@@ -22,9 +22,33 @@ var visits []models.Visit
 //GetGuestVisit : GetGuestVisit
 func (v VisitController) GetGuestVisit(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get Guest Visits method")
 
-		// db.Query(`select `)
+		// Retreieve the URL parameters as "r" and insert into a
+		// map data type as "params"
+		params := mux.Vars(r)
+
+		// Return the Guest ID and store in id
+		id, _ := strconv.Atoi(params["id"])
+		// Return the Visit ID and store in vid
+		vid, _ := strconv.Atoi(params["vid"])
+
+		visitRepo := repository.VisitRepository{}
+
+		visit, err := visitRepo.GetGuestVisit(db, id, vid)
+
+		if err != nil {
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+
+			getSuccessMsg := `[INFO] Visit successfully retrieved.`
+			log.Println(getSuccessMsg)
+
+			// When successful send the results and status code to the client
+			w.Header().Set("Content-Type", "application/json")
+			utils.SendSuccess(w, visit)
+			utils.SendSuccess(w, getSuccessMsg)
+		}
 	}
 }
 
@@ -36,11 +60,11 @@ func (v VisitController) GetGuestVisits(db *sql.DB) http.HandlerFunc {
 		// map data type as "params"
 		params := mux.Vars(r)
 
-		visitRepo := repository.VisitRepository{}
-
 		// Convert the URL parameter value to an int,
 		// rather than a string
 		id, _ := strconv.Atoi(params["id"])
+
+		visitRepo := repository.VisitRepository{}
 
 		visits, visitsSize, err := visitRepo.GetGuestVisits(db, id)
 
@@ -81,14 +105,14 @@ func (v VisitController) AddGuestVisit(db *sql.DB) http.HandlerFunc {
 		response.Decode(&visit)
 
 		visitRepo := repository.VisitRepository{}
-		err := visitRepo.AddGuestVisit(db, guest, visit)
+		dateofVisitNext, err := visitRepo.AddGuestVisit(db, guest, visit)
 
 		if err != nil {
 			log.Println(err.Error())
 			utils.SendError(w, http.StatusInternalServerError, err.Error())
 		} else {
 			addSuccessMsg := `[INFO] %s %s's visit is successfully saved. Next visit on %s`
-			addSuccessMsg = fmt.Sprintf(addSuccessMsg, guest.FirstName, guest.LastName, visit.DateofVisitNext)
+			addSuccessMsg = fmt.Sprintf(addSuccessMsg, guest.FirstName, guest.LastName, dateofVisitNext)
 
 			log.Println(addSuccessMsg)
 
@@ -100,15 +124,6 @@ func (v VisitController) AddGuestVisit(db *sql.DB) http.HandlerFunc {
 
 //UpdateGuestVisit : UpdateGuestVisit
 func (v VisitController) UpdateGuestVisit(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get Guest Visits method")
-
-		// db.Query(`select `)
-	}
-}
-
-//UpdateGuestVisits : UpdateGuestVisits
-func (v VisitController) UpdateGuestVisits(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Invoking the Get Guest Visits method")
 

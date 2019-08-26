@@ -48,17 +48,16 @@ func main() {
 	router.HandleFunc("/guests", guest.GetGuests(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}", guest.GetGuest(db)).Methods("GET")
 	router.HandleFunc("/guests", guest.AddGuest(db)).Methods("POST")
-	router.HandleFunc("/guests", guest.UpdateGuests(db)).Methods("PUT")
 	router.HandleFunc("/guests/{id}", guest.UpdateGuest(db)).Methods("PUT")
 	router.HandleFunc("/guests/{id}/{do}", guest.ArchiveGuest(db)).Methods("DELETE")
 
 	// Handle all Visit object requests per Guest object
 	router.HandleFunc("/guests/{id}/visits", visit.GetGuestVisits(db)).Methods("GET")
-	router.HandleFunc("/guests/{id}/visits/{id}", visit.GetGuestVisit(db)).Methods("GET")
+	router.HandleFunc("/guests/{id}/visits/{vid}", visit.GetGuestVisit(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}/visits", visit.AddGuestVisit(db)).Methods("POST")
-	router.HandleFunc("/guests/{id}/visits", visit.UpdateGuestVisits(db)).Methods("PUT")
-	router.HandleFunc("/guests/{id}/visits/{id}", visit.UpdateGuestVisit(db)).Methods("PUT")
-	router.HandleFunc("/guests/{id}/visits/{id}", visit.ArchiveGuestVisit(db)).Methods("DELETE")
+	// router.HandleFunc("/guests/{id}/visits", visit.UpdateGuestVisits(db)).Methods("PUT")
+	// router.HandleFunc("/guests/{id}/visits/{vid}", visit.UpdateGuestVisit(db)).Methods("PUT")
+	// router.HandleFunc("/guests/{id}/visits/{vid}", visit.ArchiveGuestVisit(db)).Methods("DELETE")
 
 	// Handle all Pantry report requests
 

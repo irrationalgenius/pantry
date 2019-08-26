@@ -13,6 +13,41 @@ import (
 // VisitRepository : VisitRepository
 type VisitRepository struct{}
 
+//GetGuestVisit : GetGuestVisit
+func (v VisitRepository) GetGuestVisit(db *sql.DB, id int, vid int) (models.Visit, error) {
+
+	err := visitCheckID(db, id)
+
+	if err != nil {
+		return models.Visit{}, err
+	}
+
+	// Initialize an instance of the VisitRaw struct
+	var visitRaw models.VisitRaw
+
+	sqlVisitRawGet := `SELECT id, guest_id, date_visit, date_visit_next,
+			notes, last_date_updated
+		FROM visits
+		WHERE guest_id = $1
+			AND id = $2`
+
+	row := db.QueryRow(sqlVisitRawGet, id, vid)
+
+	err = row.Scan(&visitRaw.ID, &visitRaw.GuestID, &visitRaw.DateofVisitLast, &visitRaw.DateofVisitNext,
+		&visitRaw.Notes, &visitRaw.LastDateUpdated)
+
+	if err != nil {
+		return models.Visit{}, err
+	}
+
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	visit := visitClean(visitRaw)
+
+	return visit, nil
+}
+
 //GetGuestVisits : GetGuestVisits
 func (v VisitRepository) GetGuestVisits(db *sql.DB, id int) ([]models.Visit, int, error) {
 
@@ -23,7 +58,7 @@ func (v VisitRepository) GetGuestVisits(db *sql.DB, id int) ([]models.Visit, int
 
 	sqlVisitRawGet := `SELECT id, guest_id, date_visit, date_visit_next,
 			notes, last_date_updated
-		FROM pantry.visits
+		FROM visits
 		WHERE guest_id = $1`
 
 	rows, err := db.Query(sqlVisitRawGet, id)
@@ -58,13 +93,13 @@ func (v VisitRepository) GetGuestVisits(db *sql.DB, id int) ([]models.Visit, int
 }
 
 //AddGuestVisit : AddGuestVisit
-func (v VisitRepository) AddGuestVisit(db *sql.DB, guest models.Guest, visit models.Visit) error {
+func (v VisitRepository) AddGuestVisit(db *sql.DB, guest models.Guest, visit models.Visit) (time.Time, error) {
 
 	// First thing first: validating the data, if the data does not meet
 	// requirements, an error is issued back to the client
 	if guest.ID == 0 {
 		errorMsg := `[ERROR] Guest ID value is not set, adding visit failed.`
-		return errors.New(errorMsg)
+		return time.Time{}, errors.New(errorMsg)
 	}
 
 	// Set the current visit to the current day
@@ -80,20 +115,16 @@ func (v VisitRepository) AddGuestVisit(db *sql.DB, guest models.Guest, visit mod
 	visitCheck, err := visitValidate(db, guest, visit)
 
 	if err != nil || visitCheck == false {
-		return err
+		return time.Time{}, err
 	}
 
-	// Set the visit interval by the variable value from the environment
-	currentVisitInterval, err := strconv.Atoi(os.Getenv("APP_VISIT_INTERVAL"))
+	visit, err = visitCalcVisistNext(visit)
 
 	if err != nil {
-		return err
+		return time.Time{}, err
 	}
 
-	// Add the newly set currentVisitInterval to the Guest's visit record for saving.
-	visit.DateofVisitNext = visit.DateofVisitLast.AddDate(0, 0, currentVisitInterval)
-
-	sqlVisitAdd := `INSERT INTO pantry.visits(
+	sqlVisitAdd := `INSERT INTO visits(
 	  	guest_id,
 			date_visit,
 			date_visit_next,
@@ -104,6 +135,36 @@ func (v VisitRepository) AddGuestVisit(db *sql.DB, guest models.Guest, visit mod
 	_, err = db.Exec(sqlVisitAdd,
 		guest.ID, visit.DateofVisitLast, visit.DateofVisitNext,
 		visit.Notes, visit.LastDateUpdated)
+
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return visit.DateofVisitNext, nil
+}
+
+//UpdateGuestVisit : UpdateGuestVisit
+func (v VisitRepository) UpdateGuestVisit(db *sql.DB, guest models.Guest, visit models.Visit) error {
+
+	visitID := int(visit.ID)
+
+	err := visitCheckID(db, visitID)
+
+	if err != nil {
+		return err
+	}
+
+	visit.LastDateUpdated = time.Now()
+
+	sqlGuestVisitUpd := `UPDATE visits SET
+			date_visit = $1, date_visit_next = $2,
+			notes = $3, last_date_updated = $4
+		WHERE id = $5
+			AND guest_id = $6`
+
+	_, err = db.Exec(sqlGuestVisitUpd,
+		visit.DateofVisitLast, visit.DateofVisitNext, visit.Notes, visit.LastDateUpdated,
+		visit.ID, visit.GuestID)
 
 	if err != nil {
 		return err
@@ -122,7 +183,7 @@ func visitValidate(db *sql.DB, guest models.Guest, visit models.Visit) (bool, er
 	// Retrieves the latest next visit date set from the previous visit, if this is
 	// a new Guest, the default value of the visit will be 0001-01-01.
 	sqlVisitValidate := `select coalesce(max(date_visit_next), '0001-01-01')::date date_visit_next
-			from pantry.visits where guest_id = $1`
+			from visits where guest_id = $1`
 
 	result := db.QueryRow(sqlVisitValidate, guest.ID)
 
@@ -204,4 +265,39 @@ func visitsClean(visitsRaw []models.VisitRaw) []models.Visit {
 	}
 
 	return visits
+}
+
+func visitCheckID(db *sql.DB, id int) error {
+
+	var visitID int
+
+	sqlVisitGetID := `SELECT id FROM visits WHERE id = $1`
+
+	row := db.QueryRow(sqlVisitGetID, id)
+
+	err := row.Scan(&visitID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("[ERROR] Visit does not exist!")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func visitCalcVisistNext(visit models.Visit) (models.Visit, error) {
+
+	// Set the visit interval by the variable value from the environment
+	currentVisitInterval, err := strconv.Atoi(os.Getenv("app_visit_interval"))
+
+	if err != nil {
+		return models.Visit{}, err
+	}
+
+	// Add the newly set currentVisitInterval to the Guest's visit record for saving.
+	visit.DateofVisitNext = visit.DateofVisitLast.AddDate(0, 0, currentVisitInterval)
+
+	return visit, nil
 }

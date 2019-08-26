@@ -28,7 +28,7 @@ func (g GuestRepository) GetGuest(db *sql.DB, id int) (models.Guest, error) {
 			count_children, count_adults, worship_place, is_member, is_baptized,
 			is_espanol, is_unemployed, is_homeless, is_family,
 			is_contact_ok, allergies, notes, last_date_updated
-		FROM pantry.guests
+		FROM guests
 		WHERE id = $1`
 
 	rows, err := db.Query(sqlGuestRawGet, id)
@@ -72,7 +72,7 @@ func (g GuestRepository) GetGuests(db *sql.DB) ([]models.Guest, int, error) {
 			count_children, count_adults, worship_place, is_member, is_baptized,
 			is_espanol, is_unemployed, is_homeless, is_family,
 			is_contact_ok, allergies, notes, last_date_updated
-		FROM pantry.guests`
+		FROM guests`
 
 	rows, err := db.Query(sqlGuestsRawGet)
 
@@ -119,7 +119,7 @@ func (g GuestRepository) AddGuest(db *sql.DB, guest models.Guest) (int8, error) 
 		return 0, err
 	}
 
-	sqlGuestAdd := `INSERT INTO pantry.guests(
+	sqlGuestAdd := `INSERT INTO guests(
 			status, first_name, last_name, gender,
 			unit_num, st_address, state, city, zip, tel_num, email,
 			count_children, count_adults, worship_place, is_member, is_baptized,
@@ -165,7 +165,7 @@ func (g GuestRepository) UpdateGuest(db *sql.DB, guest models.Guest) error {
 	// most current details of every Guest.
 	guest.LastDateUpdated = time.Now()
 
-	sqlGuestUpdate := `UPDATE pantry.guests SET
+	sqlGuestUpdate := `UPDATE guests SET
 			status = $1, first_name = $2, last_name = $3, gender = $4,
 			unit_num = $5, st_address = $6, state = $7, city = $8,
 			zip = $9, tel_num = $10, email = $11, count_children = $12,
@@ -209,7 +209,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 			count_children, count_adults, worship_place, is_member, is_baptized,
 			is_espanol, is_unemployed, is_homeless, is_family,
 			is_contact_ok, allergies, notes, last_date_updated
-		FROM pantry.guests
+		FROM guests
 		WHERE id = $1`
 
 	rows, err := tx.Query(sqlGuestRawGet, id)
@@ -238,7 +238,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	guest := guestClean(guestRaw)
 
 	// 29 Elements for Retrieval
-	sqlGuestAdd := `INSERT INTO pantry.guests_archive(
+	sqlGuestAdd := `INSERT INTO guests_archive(
 			id, date_enrolled, status, first_name, last_name, gender,
 			unit_num, st_address, state, city, zip, tel_num, email,
 			count_children, count_adults, worship_place, is_member, is_baptized,
@@ -265,7 +265,7 @@ func (g GuestRepository) ArchiveGuest(db *sql.DB, id int) error {
 	}
 
 	// Remove the Guest record from the primary collection.
-	sqlGuestRemove := `DELETE FROM pantry.guests WHERE id = $1`
+	sqlGuestRemove := `DELETE FROM guests WHERE id = $1`
 
 	_, err = tx.Exec(sqlGuestRemove, id)
 
@@ -292,7 +292,7 @@ func (g GuestRepository) UnarchiveGuest(db *sql.DB, id int) error {
 			count_children, count_adults, worship_place, is_member, is_baptized,
 			is_espanol, is_unemployed, is_homeless, is_family,
 			is_contact_ok, allergies, notes, last_date_updated
-		FROM pantry.guests_archive
+		FROM guests_archive
 		WHERE id = $1`
 
 	row := tx.QueryRow(sqlArchGuestGet, id)
@@ -317,7 +317,7 @@ func (g GuestRepository) UnarchiveGuest(db *sql.DB, id int) error {
 	guest.LastDateUpdated = time.Now()
 
 	// 27 Elements for insertion
-	sqlArchGuestAdd := `INSERT INTO pantry.guests(
+	sqlArchGuestAdd := `INSERT INTO guests(
 			id, date_enrolled, status, first_name, last_name, gender,
 			unit_num, st_address, state, city, zip, tel_num, email,
 			count_children, count_adults, worship_place, is_member, is_baptized,
@@ -342,7 +342,7 @@ func (g GuestRepository) UnarchiveGuest(db *sql.DB, id int) error {
 	}
 
 	// Remove the Guest record from the primary collection.
-	sqlArchGuestRemove := `DELETE FROM pantry.guests_archive WHERE id = $1`
+	sqlArchGuestRemove := `DELETE FROM guests_archive WHERE id = $1`
 
 	_, err = tx.Exec(sqlArchGuestRemove, id)
 
@@ -537,7 +537,7 @@ func guestCheckID(db *sql.DB, id int) error {
 
 	var guestID int
 
-	sqlGuestGetID := `SELECT id FROM pantry.guests WHERE id = $1`
+	sqlGuestGetID := `SELECT id FROM guests WHERE id = $1`
 
 	row := db.QueryRow(sqlGuestGetID, id)
 

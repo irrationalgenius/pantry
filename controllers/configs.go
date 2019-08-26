@@ -26,12 +26,12 @@ func GetAppVars(db *sql.DB) {
 // output application parameters.
 func splashScreen() {
 
-	fmt.Println("Starting up the", os.Getenv("APP_NAME"))
-	fmt.Println("Application Version:", os.Getenv("APP_VERSION"))
-	fmt.Println("Purpose:", os.Getenv("APP_PURPOSE"))
-	fmt.Println("Owner:", os.Getenv("APP_OWNER"))
-	fmt.Println("Developer:", os.Getenv("APP_DEVELOPER"))
-	fmt.Println("Developer Email:", os.Getenv("APP_DEVELOPER_EMAIL"))
-	fmt.Println("Current Visit Wait Interval (in days):", os.Getenv("APP_VISIT_INTERVAL"))
+	fmt.Println("Starting up the", os.Getenv("app_name"))
+	fmt.Println("Application Version:", os.Getenv("app_version"))
+	fmt.Println("Purpose:", os.Getenv("app_purpose"))
+	fmt.Println("Owner:", os.Getenv("app_owner"))
+	fmt.Println("Developer:", os.Getenv("app_developer"))
+	fmt.Println("Developer Email:", os.Getenv("app_developer_email"))
+	fmt.Println("Current Visit Wait Interval (in days):", os.Getenv("app_visit_interval"))
 
 }

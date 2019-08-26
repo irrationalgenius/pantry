@@ -8,6 +8,9 @@ type ConfigParam struct {
 	//Name : Property Name
 	Name string `json:name`
 
+	//Status : Status
+	Status string `json:status`
+
 	//Category : Property Category
 	Category string `json:category`
 
