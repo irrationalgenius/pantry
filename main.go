@@ -55,9 +55,8 @@ func main() {
 	router.HandleFunc("/guests/{id}/visits", visit.GetGuestVisits(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}/visits/{vid}", visit.GetGuestVisit(db)).Methods("GET")
 	router.HandleFunc("/guests/{id}/visits", visit.AddGuestVisit(db)).Methods("POST")
-	// router.HandleFunc("/guests/{id}/visits", visit.UpdateGuestVisits(db)).Methods("PUT")
-	// router.HandleFunc("/guests/{id}/visits/{vid}", visit.UpdateGuestVisit(db)).Methods("PUT")
-	// router.HandleFunc("/guests/{id}/visits/{vid}", visit.ArchiveGuestVisit(db)).Methods("DELETE")
+	router.HandleFunc("/guests/{id}/visits/{vid}", visit.UpdateGuestVisit(db)).Methods("PUT")
+	router.HandleFunc("/guests/{id}/visits/{vid}/{do}", visit.ArchiveGuestVisit(db)).Methods("DELETE")
 
 	// Handle all Pantry report requests
 

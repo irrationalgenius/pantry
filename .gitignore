@@ -3,7 +3,8 @@ resources/Notes\ Release.txt
 resources/archive/
 resources/db/data-init/
 resources/db/postgres_psql.txt
-resources/db/sql_db_conn.txt
+resources/db/sql*.txt
+resources/db/sql*.sql
 resources/db/inventory
 .env
 history.txt

@@ -1,6 +1,21 @@
 
 # Pantry Development Completions
 
+- [x] Core Function: Manage Duplicate data (09/04/2019)
+  - [x] Union reg and arc tables for dups
+  - [x] Send Warning to terminal and client when data exists
+- [x] Core Function: ArchiveGuestVisit (08/30/2019)
+  - [x] Join this functionality with the Guest Archive
+  - [x] Develop Controller
+  - [x] Develop Implementation
+  - [x] Correctly Configure Endpoint
+  - [x] Testing
+- [x] Core Function: UpdateGuestVisit (08/30/2019)
+  - [x] Add the Guest object as supporting data
+  - [x] Develop Controller
+  - [x] Develop Implementation
+  - [x] Correctly Configure Endpoint
+  - [x] Testing
 - [x] Core Function: GetGuestVisit(s) (08/26/2019)
   - [x] Develop Controllers: Single and Collection
   - [x] Develop Implementation: Single and Collection

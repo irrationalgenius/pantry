@@ -92,6 +92,50 @@ func (v VisitRepository) GetGuestVisits(db *sql.DB, id int) ([]models.Visit, int
 	return visits, visitsSize, nil
 }
 
+//GetGuestVisitsArchive : GetGuestVisitsArchive
+func (v VisitRepository) GetGuestVisitsArchive(db *sql.DB, id int) ([]models.Visit, int, error) {
+
+	// Initialize an instance of the VisitRaw struct
+	var visitRaw models.VisitRaw
+	// Initialize an slice instance of the VisitRaw struct
+	var visitsRaw []models.VisitRaw
+
+	sqlVisitRawGet := `SELECT id, guest_id, date_visit, date_visit_next,
+			notes, last_date_updated
+		FROM visits_archive
+		WHERE guest_id = $1`
+
+	rows, err := db.Query(sqlVisitRawGet, id)
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while retrieving data from the database.`
+		return []models.Visit{}, 0, errors.New(errorMsg)
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&visitRaw.ID, &visitRaw.GuestID, &visitRaw.DateofVisitLast, &visitRaw.DateofVisitNext,
+			&visitRaw.Notes, &visitRaw.LastDateUpdated)
+
+		visitsRaw = append(visitsRaw, visitRaw)
+	}
+
+	if err != nil {
+		errorMsg := `[ERROR] Issue occured while assigning data from the database.`
+		return []models.Visit{}, 0, errors.New(errorMsg)
+	}
+
+	// After the data is retrieved from the database, it must be
+	// cleaned, meaning NULL values set to Golang defaults
+	// (Go has no idea what a NULL is, and neither do I :|)
+	visits := visitsClean(visitsRaw)
+
+	// Let's count the items in the group. This will be used for logging
+	// purposes.
+	visitsSize := len(visits)
+
+	return visits, visitsSize, nil
+}
+
 //AddGuestVisit : AddGuestVisit
 func (v VisitRepository) AddGuestVisit(db *sql.DB, guest models.Guest, visit models.Visit) (time.Time, error) {
 
@@ -169,6 +213,133 @@ func (v VisitRepository) UpdateGuestVisit(db *sql.DB, guest models.Guest, visit 
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+//ArchiveGuestVisit : ArchiveGuestVisit
+func (v VisitRepository) ArchiveGuestVisit(db *sql.DB, visit models.Visit) error {
+
+	var visitRaw models.VisitRaw
+	var archiveDateLast time.Time = time.Now()
+	// Set archiveMethod to "D" denoting this record was moved using
+	// the application.
+	var archiveMethod = "D"
+
+	// We are going to create a transaction because we have a few statements
+	// to execute. To ensure every step completes successfully without
+	// anyone doing halfway work, and not telling us
+	tx, _ := db.Begin()
+
+	sqlVisitRawGet := `SELECT id, guest_id, date_visit, date_visit_next,
+			notes, last_date_updated
+		FROM visits
+		WHERE id = $1
+		  AND guest_id = $2`
+
+	row := tx.QueryRow(sqlVisitRawGet, visit.ID, visit.GuestID)
+
+	err := row.Scan(&visitRaw.ID, &visitRaw.GuestID, &visitRaw.DateofVisitLast, &visitRaw.DateofVisitNext,
+		&visitRaw.Notes, &visitRaw.LastDateUpdated)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	visit = visitClean(visitRaw)
+
+	sqlVisitAdd := `INSERT INTO visits_archive(
+	  	guest_id,
+			date_visit,
+			date_visit_next,
+	  	notes,
+			last_date_updated,
+			archive_last_date_updated,
+			archive_method)
+		VALUES($1, $2, $3, $4, $5, $6, $7)`
+
+	_, err = tx.Exec(sqlVisitAdd,
+		visit.GuestID, visit.DateofVisitLast, visit.DateofVisitNext,
+		visit.Notes, visit.LastDateUpdated, archiveDateLast, archiveMethod)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	sqlVisitRemove := `DELETE FROM visits WHERE id = $1 AND guest_id = $2`
+
+	_, err = tx.Exec(sqlVisitRemove, visit.ID, visit.GuestID)
+
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	_ = tx.Commit()
+
+	return nil
+}
+
+//UnarchiveGuestVisit : UnarchiveGuestVisit
+func (v VisitRepository) UnarchiveGuestVisit(db *sql.DB, visit models.Visit) error {
+
+	var visitRaw models.VisitRaw
+
+	tx, _ := db.Begin()
+
+	sqlVisitRawGet := `SELECT id, guest_id, date_visit, date_visit_next,
+			notes, last_date_updated
+		FROM visits_archive
+		WHERE id = $1
+		  AND guest_id = $2`
+
+	row := tx.QueryRow(sqlVisitRawGet, visit.ID, visit.GuestID)
+
+	err := row.Scan(&visitRaw.ID, &visitRaw.GuestID, &visitRaw.DateofVisitLast, &visitRaw.DateofVisitNext,
+		&visitRaw.Notes, &visitRaw.LastDateUpdated)
+
+	if err != nil {
+		_ = tx.Rollback()
+		// return errors.New("[DEBUG] Error #1: Getting from Archive")
+		return err
+	}
+
+	visit = visitClean(visitRaw)
+
+	visit.LastDateUpdated = time.Now()
+
+	sqlArchVisitAdd := `INSERT INTO visits(
+			id,
+	  	guest_id,
+			date_visit,
+			date_visit_next,
+	  	notes,
+			last_date_updated)
+		VALUES($1, $2, $3, $4, $5, $6)`
+
+	_, err = tx.Exec(sqlArchVisitAdd,
+		visit.ID, visit.GuestID, visit.DateofVisitLast, visit.DateofVisitNext,
+		visit.Notes, visit.LastDateUpdated)
+
+	if err != nil {
+		_ = tx.Rollback()
+		// return errors.New("[DEBUG] Error #2: Inserting into Visits table")
+		return err
+	}
+
+	sqlArchVisitRemove := `DELETE FROM visits_archive WHERE id = $1 AND guest_id = $2`
+
+	_, err = tx.Exec(sqlArchVisitRemove, visit.ID, visit.GuestID)
+
+	if err != nil {
+		_ = tx.Rollback()
+		// return errors.New("[DEBUG] Error #3: Removing from Archive")
+		return err
+	}
+
+	_ = tx.Commit()
 
 	return nil
 }

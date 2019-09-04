@@ -2,16 +2,17 @@
 # Pantry Development Board
 
 ### Priority
-- [ ] Core Function: UpdateGuestVisit
-  - [ ] Develop Controllers: Single and Collection
-  - [ ] Develop Implementation: Single and Collection
-  - [ ] Correctly Configure Endpoint
-  - [ ] Testing
+- [ ] Architecture: Add Gogradle for dependency management
 
 ***********
 ### Backlog
-- [ ] Core Function: ArchiveGuestVisit
-  - [ ] Join this functionality with the Guest Archive
+  - [Gogradle Github](https://github.com/gogradle/gogradle)
+- [ ] Architecture: Update API Endpoints
+  - [ ] Determine to use the json object values, or the URI values for
+    managing objects. [DZone API vs Request Params](https://dzone.com/articles/rest-api-path-vs-request-body-parameters)
+  - [ ] Begin a versioning strategy including the changes in the URI as:
+    - api/v2019.4.1/pantry/guests/1
+    - api/v1/pantry/guests/2/visits/1
 - [ ] Feature: Data Locking or User Privs
 - [ ] Feature: User Authentication (Login System)
 - [ ] Feature: Inventory Tracking

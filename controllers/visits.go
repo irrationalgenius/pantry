@@ -125,17 +125,82 @@ func (v VisitController) AddGuestVisit(db *sql.DB) http.HandlerFunc {
 //UpdateGuestVisit : UpdateGuestVisit
 func (v VisitController) UpdateGuestVisit(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get Guest Visits method")
 
-		// db.Query(`select `)
+		var guest models.Guest
+		var visit models.Visit
+
+		data := json.NewDecoder(r.Body)
+		data.Decode(&guest)
+		data.Decode(&visit)
+
+		visitRepo := repository.VisitRepository{}
+		err := visitRepo.UpdateGuestVisit(db, guest, visit)
+
+		// If any errors write to the env log and return message to client,
+		// otherwise send a successful operation
+		if err != nil {
+			log.Println(err.Error())
+			utils.SendError(w, http.StatusInternalServerError, err.Error())
+		} else {
+			updateSuccessMsg := "[INFO] %s %s's visit information is successfully updated."
+			updateSuccessMsg = fmt.Sprintf(updateSuccessMsg, guest.FirstName, guest.LastName)
+
+			log.Println(updateSuccessMsg)
+
+			w.Header().Set("Content-Type", "text/plain")
+			utils.SendSuccess(w, updateSuccessMsg)
+		}
 	}
 }
 
 //ArchiveGuestVisit : ArchiveGuestVisit
 func (v VisitController) ArchiveGuestVisit(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Invoking the Get Guest Visits method")
 
-		// db.Query(`select `)
+		// Retreieve the URL parameters as "r" and insert into a
+		// map data type as "params"
+		params := mux.Vars(r)
+
+		// Initialize a variable with the type of the Guest struct
+		var guest models.Guest
+		// Initialize a variable with the type of the Visit struct
+		var visit models.Visit
+
+		data := json.NewDecoder(r.Body)
+		data.Decode(&guest)
+		data.Decode(&visit)
+
+		// Get value of input params and store in local vars
+		// id, _ := strconv.Atoi(params["id"])
+		// vid, _ := strconv.Atoi(params["vid"])
+		do := params["do"]
+
+		visitRepo := repository.VisitRepository{}
+
+		if do == "A" {
+			err := visitRepo.ArchiveGuestVisit(db, visit)
+
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+			} else {
+				// When successful send the results and status code to the client
+				w.Header().Set("Content-Type", "text/plain")
+				utils.SendSuccess(w, "Visit is successfully Archived.")
+			}
+		}
+
+		if do == "U" {
+			err := visitRepo.UnarchiveGuestVisit(db, visit)
+
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+			} else {
+				// When successful send the results and status code to the client
+				w.Header().Set("Content-Type", "text/plain")
+				utils.SendSuccess(w, "Visit is successfully Unarchived.")
+			}
+		}
 	}
 }

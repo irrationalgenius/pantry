@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"pantry/models"
 	"time"
 )
@@ -114,6 +115,12 @@ func (g GuestRepository) AddGuest(db *sql.DB, guest models.Guest) (int8, error) 
 	// First thing first: validating the data, if the data does not meet
 	// requirements, an error is issued back to the client
 	guest, err := guestValidate(guest)
+
+	if err != nil {
+		return 0, err
+	}
+
+	err = guestCheckDups(db, guest)
 
 	if err != nil {
 		return 0, err
@@ -548,6 +555,44 @@ func guestCheckID(db *sql.DB, id int) error {
 			return errors.New("[ERROR] Guest does not exist!")
 		}
 		return err
+	}
+
+	return nil
+}
+
+// Before adding Guest information to the Guests table or the
+// Guests Archive table, warn the user of possible duplicate.
+func guestCheckDups(db *sql.DB, guest models.Guest) error {
+
+	var guestPossDup models.Guest
+	var guestTable string
+
+	sqlGuestInspect := `SELECT 'Regular' AS table, id, first_name, last_name, zip, tel_num, email
+				FROM guests
+				WHERE first_name = $1
+					AND last_name = $2
+					AND zip = $3
+			UNION SELECT 'Archive' AS table, id, first_name, last_name, zip, tel_num, email
+				FROM guests_archive
+				WHERE first_name = $1
+					AND last_name = $2
+					AND zip = $3`
+
+	row := db.QueryRow(sqlGuestInspect,
+		guest.FirstName, guest.LastName, guest.Zip)
+
+	err := row.Scan(&guestTable, &guestPossDup.ID, &guestPossDup.FirstName, &guestPossDup.LastName, &guestPossDup.Zip,
+		&guestPossDup.TelNum, &guestPossDup.Email)
+
+	if err == sql.ErrNoRows {
+		return nil
+	} else {
+		if guestPossDup.ID != 0 {
+			msgInspectGuest := `[WARN] Possible duplicate (%s): Guest ID: %d; Fullname: %s %s`
+			msg := fmt.Sprintf(msgInspectGuest, guestTable, guestPossDup.ID, guestPossDup.FirstName, guestPossDup.LastName)
+
+			return errors.New(msg)
+		}
 	}
 
 	return nil

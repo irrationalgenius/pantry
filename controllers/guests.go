@@ -111,21 +111,13 @@ func (g GuestController) AddGuest(db *sql.DB) http.HandlerFunc {
 		guestID, err := guestRepo.AddGuest(db, guest)
 
 		if err != nil {
-			utils.SendError(w, http.StatusInternalServerError, err)
-			utils.LogFatal(err)
-		}
-
-		// Assigns the newly returned ID from the database to the Guest ID
-		// in the current object
-		guest.ID = guestID
-
-		// visitRepo := repository.VisitRepository{}
-		// err = visitRepo.AddGuestVisit(db, guest, visit)
-
-		if err != nil {
 			log.Println(err.Error())
 			utils.SendError(w, http.StatusInternalServerError, err.Error())
 		} else {
+			// Assigns the newly returned ID from the database to the Guest ID
+			// in the current object
+			guest.ID = guestID
+
 			//Int8 is converted to int64 then to a string to output Guest ID
 			guestIDStr := strconv.FormatInt(int64(guest.ID), 10)
 
@@ -179,12 +171,22 @@ func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
 		// map data type as "params"
 		params := mux.Vars(r)
 
+		// Get value of input params and store in local vars
 		id, _ := strconv.Atoi(params["id"])
+		do := params["do"]
 
 		guestRepo := repository.GuestRepository{}
 
-		if params["do"] == "A" {
+		if do == "A" {
 			err := guestRepo.ArchiveGuest(db, id)
+
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			_, err = archiveGuestVisits(db, id)
 
 			if err != nil {
 				log.Println(err.Error())
@@ -196,8 +198,16 @@ func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		if params["do"] == "U" {
+		if do == "U" {
 			err := guestRepo.UnarchiveGuest(db, id)
+
+			if err != nil {
+				log.Println(err.Error())
+				utils.SendError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			_, err = unarchiveGuestVisits(db, id)
 
 			if err != nil {
 				log.Println(err.Error())
@@ -209,4 +219,48 @@ func (g GuestController) ArchiveGuest(db *sql.DB) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+// ********************* Helper Functions ********************* //
+
+func archiveGuestVisits(db *sql.DB, id int) (int, error) {
+
+	visitRepo := repository.VisitRepository{}
+
+	visits, visitsSize, err := visitRepo.GetGuestVisits(db, id)
+
+	if err != nil {
+		return 0, err
+	}
+
+	for _, visit := range visits {
+		err = visitRepo.ArchiveGuestVisit(db, visit)
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return visitsSize, nil
+}
+
+func unarchiveGuestVisits(db *sql.DB, id int) (int, error) {
+
+	visitRepo := repository.VisitRepository{}
+
+	visits, visitsSize, err := visitRepo.GetGuestVisitsArchive(db, id)
+
+	if err != nil {
+		return 0, err
+	}
+
+	for _, visit := range visits {
+		err = visitRepo.UnarchiveGuestVisit(db, visit)
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return visitsSize, nil
 }
