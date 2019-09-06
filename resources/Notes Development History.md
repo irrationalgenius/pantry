@@ -1,5 +1,5 @@
 
-# Pantry Development Completions
+# Pantry Development History
 
 - [x] Core Function: Manage Duplicate data (09/04/2019)
   - [x] Union reg and arc tables for dups

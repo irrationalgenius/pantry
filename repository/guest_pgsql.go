@@ -534,6 +534,10 @@ func guestValidate(guest models.Guest) (models.Guest, error) {
 		validationMsg := "[ERROR] Street Address cannot be empty, unless guest is homeless."
 		return models.Guest{}, errors.New(validationMsg)
 	}
+	if guest.Zip == "" {
+		validationMsg := "[ERROR] Zip code cannot be empty."
+		return models.Guest{}, errors.New(validationMsg)
+	}
 
 	return guest, nil
 }
@@ -552,7 +556,7 @@ func guestCheckID(db *sql.DB, id int) error {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New("[ERROR] Guest does not exist!")
+			return errors.New("[ERROR] Guest does not exist")
 		}
 		return err
 	}
@@ -561,7 +565,7 @@ func guestCheckID(db *sql.DB, id int) error {
 }
 
 // Before adding Guest information to the Guests table or the
-// Guests Archive table, warn the user of possible duplicate.
+// Guests Archive table, warn the user of possible duplicates.
 func guestCheckDups(db *sql.DB, guest models.Guest) error {
 
 	var guestPossDup models.Guest
@@ -586,14 +590,14 @@ func guestCheckDups(db *sql.DB, guest models.Guest) error {
 
 	if err == sql.ErrNoRows {
 		return nil
-	} else {
-		if guestPossDup.ID != 0 {
-			msgInspectGuest := `[WARN] Possible duplicate (%s): Guest ID: %d; Fullname: %s %s`
-			msg := fmt.Sprintf(msgInspectGuest, guestTable, guestPossDup.ID, guestPossDup.FirstName, guestPossDup.LastName)
-
-			return errors.New(msg)
-		}
 	}
 
-	return nil
+	if guestPossDup.ID != 0 {
+		msgInspectGuest := `[WARN] Possible duplicate (%s): Guest ID: %d; Fullname: %s %s`
+		msg := fmt.Sprintf(msgInspectGuest, guestTable, guestPossDup.ID, guestPossDup.FirstName, guestPossDup.LastName)
+
+		return errors.New(msg)
+	}
+
+	return err
 }

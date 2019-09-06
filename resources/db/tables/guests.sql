@@ -18,6 +18,7 @@ CREATE TABLE guests (
 	count_children int4 NULL, -- Total Household child count
 	count_adults int4 NULL, -- Total Household adult count
 	worship_place varchar(80) NULL, -- Primary place of worship
+	-- origin text NULL, -- How did you hear about Us?
 	is_member varchar(1) NULL, -- Is a Member of the Laurel Church of Christ
 	is_baptized varchar(1) NULL, -- Is Baptized into Jesus Christ
 	is_espanol varchar(1) NULL, -- Is Spanish speaking, Hispanic

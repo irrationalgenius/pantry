@@ -1,4 +1,4 @@
-module udemy-bookstore
+module pantry
 
 require (
 	github.com/gorilla/mux v1.7.3

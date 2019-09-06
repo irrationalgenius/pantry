@@ -450,7 +450,7 @@ func visitCheckID(db *sql.DB, id int) error {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New("[ERROR] Visit does not exist!")
+			return errors.New("[ERROR] Guest visit does not exist")
 		}
 		return err
 	}
