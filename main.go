@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pantry/controllers"
-	"pantry/drivers"
-	"pantry/models"
+	"pantry-api/controllers"
+	"pantry-api/drivers"
+	"pantry-api/models"
 
 	"github.com/gorilla/mux"
 	"github.com/subosito/gotenv"

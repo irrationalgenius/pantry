@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
-	"pantry/models"
+	"pantry-api/models"
 	"strconv"
 	"time"
 )

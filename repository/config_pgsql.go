@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"os"
-	"pantry/models"
+	"pantry-api/models"
 )
 
 // GetAppVars function in the repository is the implementation code

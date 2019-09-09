@@ -3,7 +3,7 @@ package drivers
 import (
 	"database/sql"
 	"os"
-	"pantry/utils"
+	"pantry-api/utils"
 
 	"github.com/lib/pq"
 )

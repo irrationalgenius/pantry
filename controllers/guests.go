@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pantry/models"
-	"pantry/repository"
-	"pantry/utils"
+	"pantry-api/models"
+	"pantry-api/repository"
+	"pantry-api/utils"
 	"strconv"
 
 	"github.com/gorilla/mux"

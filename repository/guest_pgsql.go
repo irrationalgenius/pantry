@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"pantry/models"
+	"pantry-api/models"
 	"time"
 )
 

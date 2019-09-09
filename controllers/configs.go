@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"pantry/repository"
-	"pantry/utils"
+	"pantry-api/repository"
+	"pantry-api/utils"
 )
 
 // GetAppVars is for retreieving application parameters
